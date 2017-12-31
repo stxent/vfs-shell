@@ -1,0 +1,12 @@
+[submodule "Libs/xcore"]
+	path = Libs/xcore
+	url = https://github.com/stxent/xcore.git
+[submodule "Libs/halm"]
+	path = Libs/halm
+	url = https://github.com/stxent/halm.git
+[submodule "Libs/osw"]
+	path = Libs/osw
+	url = https://github.com/stxent/osw.git
+[submodule "Libs/yaf"]
+	path = Libs/yaf
+	url = https://github.com/stxent/yaf.git
