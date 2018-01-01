@@ -13,7 +13,8 @@ class TimeProvider
 {
 public:
   virtual ~TimeProvider() = default;
-  virtual time64_t microtime() = 0;
+  virtual time64_t get() = 0;
+  virtual Result set(time64_t) = 0;
 };
 
 #endif // VFS_SHELL_CORE_SHELL_TIMEPROVIDER_HPP_

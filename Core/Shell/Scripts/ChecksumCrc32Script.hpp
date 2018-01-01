@@ -10,6 +10,7 @@
 #include <xcore/crc/crc32.h>
 #include "Shell/ArgParser.hpp"
 #include "Shell/Scripts/DataReader.hpp"
+#include "Wrappers/Semaphore.hpp"
 
 template<size_t BUFFER_SIZE>
 class ChecksumCrc32Script: public DataReader
@@ -17,29 +18,45 @@ class ChecksumCrc32Script: public DataReader
 public:
   ChecksumCrc32Script(Script *parent, ArgumentIterator firstArgument, ArgumentIterator lastArgument) :
     DataReader{parent, firstArgument, lastArgument},
-    m_result{E_OK}
+    m_result{E_OK},
+    m_semaphore{0}
   {
+  }
+
+  virtual Result onEventReceived(const ScriptEvent *event) override
+  {
+    switch (event->event)
+    {
+      case ScriptEvent::Event::SERIAL_INPUT:
+        if (m_semaphore.value() <= 0)
+          m_semaphore.post();
+        break;
+
+      default:
+        break;
+    }
+
+    return E_OK;
   }
 
   virtual Result run() override
   {
-    Arguments arguments;
-    const std::array<ArgParser::Descriptor, 1> descriptors = {
-        {
-            {"--help", "print help message", 0, boolArgumentSetter, &arguments.showHelpMessage}
-        }
+    static const ArgParser::Descriptor descriptors[] = {
+        {"--help", nullptr, "show this help message and exit", 0, Arguments::helpSetter},
+        {nullptr, "FILE", "compute checksum for FILE", 0, nullptr}
     };
 
-    ArgParser::parse(m_firstArgument, m_lastArgument, descriptors.begin(), descriptors.end());
+    const Arguments arguments = ArgParser::parse<Arguments>(m_firstArgument, m_lastArgument,
+        std::cbegin(descriptors), std::cend(descriptors));
 
-    if (arguments.showHelpMessage)
+    if (arguments.help)
     {
-      ArgParser::help(tty(), descriptors.begin(), descriptors.end());
+      ArgParser::help(tty(), name(), std::cbegin(descriptors), std::cend(descriptors));
       return E_OK;
     }
     else
     {
-      ArgParser::invoke(m_firstArgument, m_lastArgument, descriptors.begin(), descriptors.end(),
+      ArgParser::invoke(m_firstArgument, m_lastArgument, std::cbegin(descriptors), std::cend(descriptors),
           std::bind(&ChecksumCrc32Script::computeChecksum, this, std::placeholders::_1));
       return m_result;
     }
@@ -56,23 +73,38 @@ private:
   struct Arguments
   {
     Arguments() :
-      showHelpMessage{false}
+      help{false}
     {
     }
 
-    bool showHelpMessage;
+    bool help;
+
+    static void helpSetter(void *object, const char *)
+    {
+      static_cast<Arguments *>(object)->help = true;
+    }
   };
 
   Result m_result;
+  Semaphore m_semaphore;
 
   Result onDataRead(uint32_t *checksum, const void *buffer, size_t bytesRead)
   {
+    while (m_semaphore.tryWait())
+    {
+      if (checkForTerminateRequest())
+        return E_TIMEOUT;
+    }
+
     *checksum = crc32Update(*checksum, buffer, bytesRead);
     return E_OK;
   }
 
   void computeChecksum(const char *positionalArgument)
   {
+    if (m_result != E_OK)
+      return;
+
     // Open the source node
     FsNode * const src = ShellHelpers::openSource(fs(), env(), positionalArgument);
 
@@ -100,9 +132,22 @@ private:
     }
   }
 
-  static void boolArgumentSetter(void *object, const char *)
+  bool checkForTerminateRequest()
   {
-    *static_cast<bool *>(object) = true;
+    static constexpr size_t RX_BUFFER = 16;
+    char rxBuffer[RX_BUFFER];
+    size_t rxCount;
+
+    while ((rxCount = tty().read(rxBuffer, sizeof(rxBuffer))))
+    {
+      for (size_t i = 0; i < rxCount; ++i)
+      {
+        if (rxBuffer[i] == '\x03') // End of text
+          return true;
+      }
+    }
+
+    return false;
   }
 };
 

@@ -42,33 +42,34 @@ protected:
     const Fat32Config config{interface, 4, 2};
     FsHandle * const partition = static_cast<FsHandle *>(init(FatHandle, &config));
 
-    if (partition == nullptr)
+    if (partition != nullptr)
+    {
+      // Create VFS node
+      VfsNode * const mountpoint = new VfsMountpoint{ShellHelpers::extractName(dst), partition, interface,
+          time().get(), FS_ACCESS_READ | FS_ACCESS_WRITE};
+
+      // Link VFS node to the existing file tree
+      const FsFieldDescriptor fields[] = {
+          {&mountpoint, sizeof(mountpoint), static_cast<FsFieldType>(VfsNode::VFS_NODE_OBJECT)},
+      };
+      const Result res = fsNodeCreate(root, fields, ARRAY_SIZE(fields));
+
+      if (res != E_OK)
+      {
+        tty() << name() << ": node linking failed" << Terminal::EOL;
+        delete mountpoint;
+        deinit(partition);
+      }
+
+      fsNodeFree(root);
+      return res;
+    }
+    else
     {
       tty() << name() << ": partition mounting failed" << Terminal::EOL;
       fsNodeFree(root);
       return E_INTERFACE;
     }
-
-    // Create VFS node
-    VfsNode * const mountpoint = new VfsMountpoint{ShellHelpers::extractName(dst), partition, interface,
-        time().microtime(), FS_ACCESS_READ | FS_ACCESS_WRITE};
-
-    // Link VFS node to the existing file tree
-    const FsFieldDescriptor descriptors[] = {
-        {&mountpoint, sizeof(mountpoint), static_cast<FsFieldType>(VfsNode::VFS_NODE_OBJECT)},
-    };
-    const Result res = fsNodeCreate(root, descriptors, ARRAY_SIZE(descriptors));
-
-    fsNodeFree(root);
-
-    if (res != E_OK)
-    {
-      tty() << name() << ": node linking failed" << Terminal::EOL;
-      delete mountpoint;
-      deinit(partition);
-    }
-
-    return res;
   }
 };
 

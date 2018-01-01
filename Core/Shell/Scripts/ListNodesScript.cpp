@@ -5,7 +5,6 @@
  */
 
 #include <xcore/realtime.h>
-#include "Shell/ArgParser.hpp"
 #include "Shell/Scripts/ListNodesScript.hpp"
 #include "Shell/Settings.hpp"
 #include "Shell/ShellHelpers.hpp"
@@ -48,28 +47,16 @@ Terminal &operator<<(Terminal &output, ListNodesScript::HumanReadableLength leng
 
 Result ListNodesScript::run()
 {
-  const std::array<ArgParser::Descriptor, 5> descriptors{
-      {
-          {"-i", "show index of each node", 0, boolArgumentSetter, &m_arguments.showInodes},
-          {"-h", "print human readable sizes", 0, boolArgumentSetter, &m_arguments.humanReadable},
-          {"-l", "show detailed information", 0, boolArgumentSetter, &m_arguments.longListing},
-          {"--help", "print help message", 0, boolArgumentSetter, &m_arguments.showHelpMessage},
-        {nullptr, nullptr, 1, incrementNodeCounter, &m_arguments.nodeCount}
-      }
-  };
-
-  ArgParser::parse(m_firstArgument, m_lastArgument, descriptors.begin(), descriptors.end());
-
-  if (m_arguments.showHelpMessage)
+  if (m_arguments.help)
   {
-    ArgParser::help(tty(), descriptors.begin(), descriptors.end());
+    ArgParser::help(tty(), name(), descriptors().cbegin(), descriptors().cend());
     return E_OK;
   }
   else
   {
     if (m_arguments.nodeCount)
     {
-      ArgParser::invoke(m_firstArgument, m_lastArgument, descriptors.begin(), descriptors.end(),
+      ArgParser::invoke(m_firstArgument, m_lastArgument, descriptors().cbegin(), descriptors().cend(),
           std::bind(&ListNodesScript::printDirectoryContent, this, std::placeholders::_1));
     }
     else

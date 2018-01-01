@@ -31,7 +31,7 @@ public:
     Osw::semPost(&m_sem);
   }
 
-  bool tryWait(unsigned int interval)
+  bool tryWait(unsigned int interval = 0)
   {
     return Osw::semTryWait(&m_sem, interval);
   }

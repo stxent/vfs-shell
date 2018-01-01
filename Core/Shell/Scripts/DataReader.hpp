@@ -42,7 +42,9 @@ protected:
         if (bytesRead > 0)
         {
           srcPosition += bytesRead;
-          callback(buffer, bytesRead);
+
+          if ((res = callback(buffer, bytesRead)) != E_OK)
+            break;
         }
         else
           break;

@@ -17,7 +17,12 @@ public:
 
   virtual ~UnixTimeProvider();
 
-  virtual time64_t microtime() override;
+  virtual time64_t get() override;
+
+  virtual Result set(time64_t) override
+  {
+    return E_INVALID;
+  }
 
   static UnixTimeProvider &instance()
   {

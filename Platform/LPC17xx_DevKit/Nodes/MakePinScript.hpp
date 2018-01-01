@@ -22,46 +22,31 @@ public:
 
   virtual Result run() override
   {
-    Arguments args;
-    const std::array<ArgParser::Descriptor, 2> argTable = {
-        {
-            {"--help", "print help message", 0, boolArgumentSetter, &args.showHelpMessage},
-            {nullptr, nullptr, 2, positionalArgumentParser, &args}
-        }
+    static const ArgParser::Descriptor descriptors[] = {
+        {"--help", nullptr, "show this help message and exit", 0, Arguments::helpSetter},
+        {"-o", "VALUE", "configure pin as output and write VALUE", 1, Arguments::outputSetter},
+        {nullptr, "PORT", "input/output port number", 1, Arguments::portSetter},
+        {nullptr, "PIN", "input/output pin number", 1, Arguments::pinSetter},
+        {nullptr, "ENTRY", "file system entry", 1, Arguments::pathSetter}
     };
 
-    ArgParser::parse(m_firstArgument, m_lastArgument, argTable.begin(), argTable.end());
+    bool argumentsParsed;
+    const Arguments arguments = ArgParser::parse<Arguments>(m_firstArgument, m_lastArgument,
+        std::cbegin(descriptors), std::cend(descriptors), &argumentsParsed);
 
-    if (args.name == nullptr || args.port == -1 || args.offset == -1 || args.showHelpMessage)
+    if (arguments.help)
     {
-      ArgParser::help(tty(), argTable.begin(), argTable.end());
+      ArgParser::help(tty(), name(), std::cbegin(descriptors), std::cend(descriptors));
       return E_OK;
+    }
+    else if (!argumentsParsed)
+    {
+      tty() << name() << ": incorrect arguments" << Terminal::EOL;
+      return E_VALUE;
     }
     else
     {
-      char path[Settings::PWD_LENGTH];
-      ShellHelpers::joinPaths(path, env()["PWD"], args.name);
-
-      FsNode * const root = ShellHelpers::openBaseNode(fs(), path);
-      if (root == nullptr)
-      {
-        tty() << name() << ": " << path << ": parent directory not found" << Terminal::EOL;
-        return E_ENTRY;
-      }
-
-      // Create VFS node
-      VfsNode * const entry = new PinNode{ShellHelpers::extractName(args.name), args.port,
-          args.offset, time().microtime(), FS_ACCESS_READ | FS_ACCESS_WRITE};
-
-      // Link VFS node to the existing file tree
-      const FsFieldDescriptor descriptors[] = {
-          {&entry, sizeof(entry), static_cast<FsFieldType>(VfsNode::VFS_NODE_OBJECT)},
-      };
-      const Result res = fsNodeCreate(root, descriptors, ARRAY_SIZE(descriptors));
-
-      fsNodeFree(root);
-
-      return res;
+      return makePin(arguments.path, arguments.port, arguments.pin, arguments.output, arguments.value);
     }
   }
 
@@ -74,36 +59,89 @@ private:
   struct Arguments
   {
     Arguments() :
-      name{nullptr},
+      path{nullptr},
+      pin{-1},
       port{-1},
-      offset{-1},
-      showHelpMessage{false}
+      help{false},
+      output{false},
+      value{false}
     {
     }
 
-    const char *name;
+    const char *path;
+    long pin;
     long port;
-    long offset;
-    bool showHelpMessage;
+    bool help;
+    bool output;
+    bool value;
+
+    static void pathSetter(void *object, const char *argument)
+    {
+      static_cast<Arguments *>(object)->path = argument;
+    }
+
+    static void pinSetter(void *object, const char *argument)
+    {
+      static_cast<Arguments *>(object)->pin = static_cast<size_t>(atol(argument));
+    }
+
+    static void portSetter(void *object, const char *argument)
+    {
+      static_cast<Arguments *>(object)->port = static_cast<size_t>(atol(argument));
+    }
+
+    static void helpSetter(void *object, const char *)
+    {
+      static_cast<Arguments *>(object)->help = true;
+    }
+
+    static void outputSetter(void *object, const char *argument)
+    {
+      static_cast<Arguments *>(object)->output = true;
+      static_cast<Arguments *>(object)->value = atol(argument) != 0;
+    }
   };
 
-  static void boolArgumentSetter(void *object, const char *)
+  Result makePin(const char *path, long port, long pin, bool output, bool value)
   {
-    *static_cast<bool *>(object) = true;
-  }
+    char absolutePath[Settings::PWD_LENGTH];
+    ShellHelpers::joinPaths(absolutePath, env()["PWD"], path);
 
-  static void positionalArgumentParser(void *object, const char *argument)
-  {
-    auto * const args = static_cast<Arguments *>(object);
+    // Check node existence
+    FsNode * const existingNode = ShellHelpers::openNode(fs(), absolutePath);
+    if (existingNode != nullptr)
+    {
+      fsNodeFree(existingNode);
+      return E_EXIST;
+    }
 
-    if (args->name == nullptr)
-      args->name = argument;
-    else if (args->port == -1)
-      args->port = atol(argument);
-    else if (args->offset == -1)
-      args->offset = atol(argument);
+    FsNode * const root = ShellHelpers::openBaseNode(fs(), absolutePath);
+
+    if (root != nullptr)
+    {
+      // Create VFS node
+      VfsNode *entry;
+
+      // Initialize pin as output or input depending on the arguments of the command
+      if (output)
+        entry = new PinNode{ShellHelpers::extractName(path), port, pin, value, time().get()};
+      else
+        entry = new PinNode{ShellHelpers::extractName(path), port, pin, time().get()};
+
+      // Link VFS node to the existing file tree
+      const FsFieldDescriptor fields[] = {
+          {&entry, sizeof(entry), static_cast<FsFieldType>(VfsNode::VFS_NODE_OBJECT)},
+      };
+      const Result res = fsNodeCreate(root, fields, ARRAY_SIZE(fields));
+
+      fsNodeFree(root);
+      return res;
+    }
     else
-      args->showHelpMessage = true; // Incorrect argument count
+    {
+      tty() << name() << ": " << absolutePath << ": parent directory not found" << Terminal::EOL;
+      return E_ENTRY;
+    }
   }
 };
 

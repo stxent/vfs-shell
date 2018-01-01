@@ -60,13 +60,13 @@ public:
     memcpy(wrapper, ScriptHeaders::OBJECT_HEADER, sizeof(ScriptHeaders::OBJECT_HEADER));
     memcpy(wrapper + ScriptHeaders::OBJECT_HEADER_SIZE, &runner, sizeof(runner));
 
-    const auto nodeTime = time().microtime();
-    const FsFieldDescriptor runnerEntryConfig[] = {
+    const auto nodeTime = time().get();
+    const FsFieldDescriptor runnerEntryFields[] = {
         {T::name(), strlen(T::name()) + 1, FS_NODE_NAME},
         {&nodeTime, sizeof(nodeTime), FS_NODE_TIME},
         {wrapper, sizeof(wrapper), FS_NODE_DATA}
     };
-    fsNodeCreate(binEntryNode, runnerEntryConfig, ARRAY_SIZE(runnerEntryConfig));
+    fsNodeCreate(binEntryNode, runnerEntryFields, ARRAY_SIZE(runnerEntryFields));
     fsNodeFree(binEntryNode);
 
     m_scripts.emplace_back(runner);

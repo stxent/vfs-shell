@@ -1,20 +1,20 @@
 /*
- * Core/Shell/Scripts/PrintDataScript.hpp
+ * Core/Shell/Scripts/PrintHexDataScript.hpp
  * Copyright (C) 2017 xent
  * Project is distributed under the terms of the GNU General Public License v3.0
  */
 
-#ifndef VFS_SHELL_CORE_SHELL_SCRIPTS_PRINTDATASCRIPT_HPP_
-#define VFS_SHELL_CORE_SHELL_SCRIPTS_PRINTDATASCRIPT_HPP_
+#ifndef VFS_SHELL_CORE_SHELL_SCRIPTS_PRINTHEXDATASCRIPT_HPP_
+#define VFS_SHELL_CORE_SHELL_SCRIPTS_PRINTHEXDATASCRIPT_HPP_
 
 #include "Shell/ArgParser.hpp"
 #include "Shell/Scripts/DataReader.hpp"
 
 template<size_t BUFFER_SIZE>
-class PrintDataScript: public DataReader
+class PrintHexDataScript: public DataReader
 {
 public:
-  PrintDataScript(Script *parent, ArgumentIterator firstArgument, ArgumentIterator lastArgument) :
+  PrintHexDataScript(Script *parent, ArgumentIterator firstArgument, ArgumentIterator lastArgument) :
     DataReader{parent, firstArgument, lastArgument},
     m_result{E_OK}
   {
@@ -22,24 +22,23 @@ public:
 
   virtual Result run() override
   {
-    Arguments arguments;
-    const std::array<ArgParser::Descriptor, 1> descriptors = {
-        {
-            {"--help", "print help message", 0, boolArgumentSetter, &arguments.showHelpMessage}
-        }
+    static const ArgParser::Descriptor descriptors[] = {
+        {"--help", nullptr, "show this help message and exit", 0, Arguments::helpSetter},
+        {nullptr, "FILE", "display content of FILE in hexadecimal", 0, nullptr}
     };
 
-    ArgParser::parse(m_firstArgument, m_lastArgument, descriptors.begin(), descriptors.end());
+    const Arguments arguments = ArgParser::parse<Arguments>(m_firstArgument, m_lastArgument,
+        std::cbegin(descriptors), std::cend(descriptors));
 
-    if (arguments.showHelpMessage)
+    if (arguments.help)
     {
-      ArgParser::help(tty(), descriptors.begin(), descriptors.end());
+      ArgParser::help(tty(), name(), std::cbegin(descriptors), std::cend(descriptors));
       return E_OK;
     }
     else
     {
-      ArgParser::invoke(m_firstArgument, m_lastArgument, descriptors.begin(), descriptors.end(),
-          std::bind(&PrintDataScript::printData, this, std::placeholders::_1));
+      ArgParser::invoke(m_firstArgument, m_lastArgument, std::cbegin(descriptors), std::cend(descriptors),
+          std::bind(&PrintHexDataScript::displayData, this, std::placeholders::_1));
       return m_result;
     }
   }
@@ -55,11 +54,16 @@ private:
   struct Arguments
   {
     Arguments() :
-      showHelpMessage{false}
+      help{false}
     {
     }
 
-    bool showHelpMessage;
+    bool help;
+
+    static void helpSetter(void *object, const char *)
+    {
+      static_cast<Arguments *>(object)->help = true;
+    }
   };
 
   Result m_result;
@@ -90,7 +94,7 @@ private:
     return E_OK;
   }
 
-  void printData(const char *positionalArgument)
+  void displayData(const char *positionalArgument)
   {
     // Open the source node
     FsNode * const src = ShellHelpers::openSource(fs(), env(), positionalArgument);
@@ -99,8 +103,8 @@ private:
     {
       uint8_t buffer[BUFFER_SIZE];
 
-      using namespace std::placeholders;
-      m_result = read(buffer, src, BUFFER_SIZE, 0, 0, std::bind(&PrintDataScript::onDataRead, this, _1, _2));
+      m_result = read(buffer, src, BUFFER_SIZE, 0, 0, std::bind(&PrintHexDataScript::onDataRead, this,
+          std::placeholders::_1, std::placeholders::_2));
       fsNodeFree(src);
     }
     else
@@ -109,11 +113,6 @@ private:
       m_result = E_ENTRY;
     }
   }
-
-  static void boolArgumentSetter(void *object, const char *)
-  {
-    *static_cast<bool *>(object) = true;
-  }
 };
 
-#endif // VFS_SHELL_CORE_SHELL_SCRIPTS_PRINTDATASCRIPT_HPP_
+#endif // VFS_SHELL_CORE_SHELL_SCRIPTS_PRINTHEXDATASCRIPT_HPP_

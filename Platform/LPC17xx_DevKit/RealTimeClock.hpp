@@ -20,7 +20,7 @@ public:
   RealTimeClock(const RealTimeClock &) = delete;
   RealTimeClock &operator=(const RealTimeClock &) = delete;
 
-  virtual time64_t microtime() override
+  virtual time64_t get() override
   {
     time64_t globalTick;
     uint32_t currentTick;
@@ -33,6 +33,25 @@ public:
     return globalTick + static_cast<time64_t>(currentTick);
   }
 
+  virtual Result set(time64_t value) override
+  {
+    const RtcConfig updatedRealtimeClockConfig{value / 1000000, 0};
+
+    m_realtime.reset();
+    m_realtime = {static_cast<RtClock *>(init(Rtc, &updatedRealtimeClockConfig)), clockDeleter};
+
+    if (m_realtime != nullptr)
+    {
+      timerDisable(m_monotonic.get());
+      timerSetValue(m_monotonic.get(), 0);
+      m_tick = {rtTime(m_realtime.get()) * 1000000};
+      timerEnable(m_monotonic.get());
+      return E_OK;
+    }
+    else
+      return E_VALUE;
+  }
+
   static RealTimeClock &instance()
   {
     static RealTimeClock object;
@@ -42,9 +61,14 @@ public:
 private:
   static constexpr time64_t PERIOD = static_cast<time64_t>(std::numeric_limits<uint32_t>::max());
 
+  static void clockDeleter(RtClock *pointer)
+  {
+    deinit(pointer);
+  }
+
   RealTimeClock() :
     m_monotonic{static_cast<Timer *>(init(GpTimer, &s_monotonicTimerConfig)), [](Timer *pointer){ deinit(pointer); }},
-    m_realtime{static_cast<RtClock *>(init(Rtc, &s_realtimeClockConfig)), [](RtClock *pointer){ deinit(pointer); }},
+    m_realtime{static_cast<RtClock *>(init(Rtc, &s_realtimeClockConfig)), clockDeleter},
     m_tick{rtTime(m_realtime.get()) * 1000000}
   {
     timerEnable(m_monotonic.get());

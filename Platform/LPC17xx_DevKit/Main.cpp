@@ -28,7 +28,8 @@
 #include "Shell/Scripts/ListEnvScript.hpp"
 #include "Shell/Scripts/ListNodesScript.hpp"
 #include "Shell/Scripts/MakeDirectoryScript.hpp"
-#include "Shell/Scripts/PrintDataScript.hpp"
+#include "Shell/Scripts/PrintHexDataScript.hpp"
+#include "Shell/Scripts/PrintRawDataScript.hpp"
 #include "Shell/Scripts/RemoveNodesScript.hpp"
 #include "Shell/Scripts/SetEnvScript.hpp"
 #include "Shell/Scripts/Shell.hpp"
@@ -40,6 +41,7 @@
 #include "InterfaceWrapper.hpp"
 #include "Nodes/MakePinScript.hpp"
 #include "Nodes/MountScript.hpp"
+#include "Nodes/ShutdownScript.hpp"
 #include "RealTimeClock.hpp"
 
 static void enableClock()
@@ -93,6 +95,11 @@ public:
   {
     bootstrap();
 
+    if (ShutdownScript::isRestarted)
+    {
+      m_terminal << "System restarted" << Terminal::EOL;
+    }
+
     m_initializer.attach<ChangeDirectoryScript>();
     m_initializer.attach<ChecksumCrc32Script<BUFFER_SIZE>>();
     m_initializer.attach<CopyNodeScript<BUFFER_SIZE>>();
@@ -107,10 +114,12 @@ public:
     m_initializer.attach<MakeDirectoryScript>();
     m_initializer.attach<MakePinScript>();
     m_initializer.attach<MountScript<CardBuilder>>(m_sdioWrapper.get());
-    m_initializer.attach<PrintDataScript<BUFFER_SIZE>>();
+    m_initializer.attach<PrintHexDataScript<BUFFER_SIZE>>();
+    m_initializer.attach<PrintRawDataScript<BUFFER_SIZE>>();
     m_initializer.attach<RemoveNodesScript>();
     m_initializer.attach<SetEnvScript>();
     m_initializer.attach<Shell>();
+    m_initializer.attach<ShutdownScript>();
     m_initializer.attach<TimeScript>();
 
     return m_initializer.run() == E_OK ? EXIT_SUCCESS : EXIT_FAILURE;
@@ -130,12 +139,12 @@ private:
 
   void bootstrap()
   {
-    VfsNode * const binEntry = new VfsDirectory{"bin", MockTimeProvider::instance().microtime()};
-    const FsFieldDescriptor binEntryConfig[] = {
+    VfsNode * const binEntry = new VfsDirectory{"bin", MockTimeProvider::instance().get()};
+    const FsFieldDescriptor binEntryFields[] = {
         {&binEntry, sizeof(binEntry), static_cast<FsFieldType>(VfsNode::VFS_NODE_OBJECT)}
     };
     FsNode * const rootEntryNode = static_cast<FsNode *>(fsHandleRoot(m_filesystem.get()));
-    fsNodeCreate(rootEntryNode, binEntryConfig, ARRAY_SIZE(binEntryConfig));
+    fsNodeCreate(rootEntryNode, binEntryFields, ARRAY_SIZE(binEntryFields));
     fsNodeFree(rootEntryNode);
   }
 

@@ -14,7 +14,7 @@ UnixTimeProvider::~UnixTimeProvider()
   deinit(clock);
 }
 
-time64_t UnixTimeProvider::microtime()
+time64_t UnixTimeProvider::get()
 {
   struct timespec currentTime;
 

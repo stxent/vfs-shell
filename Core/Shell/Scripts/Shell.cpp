@@ -19,15 +19,15 @@ Result Shell::run()
   size_t position = 0;
   char command[COMMAND_BUFFER];
   char carriage = 0;
-  bool silent = m_executable != nullptr;
-  bool echo = (!silent && strcmp(env()["ECHO"], "0") != 0) || strcmp(env()["DEBUG"], "0") == 0;
+  bool interactive = m_executable == nullptr;
+  bool echo = (interactive && strcmp(env()["ECHO"], "0") != 0) || strcmp(env()["DEBUG"], "1") == 0;
 
-  if (!silent)
+  if (interactive)
     m_terminal << workDir << "> ";
 
   do
   {
-    if (!silent)
+    if (interactive)
       m_semaphore.wait();
 
     char rxBuffer[RX_BUFFER];
@@ -71,7 +71,7 @@ Result Shell::run()
             evaluate(command, position);
             position = 0;
 
-            if (!silent)
+            if (interactive)
               m_terminal << workDir << "> ";
           }
           carriage = c;
@@ -106,7 +106,7 @@ Result Shell::run()
         m_terminal.write(outputStart, outputEnd - outputStart);
     }
   }
-  while (!silent && m_state != State::STOP); // FIXME Rewrite slave logic more thoughtfully
+  while (interactive && m_state != State::STOP); // FIXME Rewrite slave logic more thoughtfully
 
   return E_OK; // TODO
 }

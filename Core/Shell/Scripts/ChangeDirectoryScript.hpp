@@ -7,6 +7,7 @@
 #ifndef VFS_SHELL_CORE_SHELL_SCRIPTS_CHANGEDIRECTORYSCRIPT_HPP_
 #define VFS_SHELL_CORE_SHELL_SCRIPTS_CHANGEDIRECTORYSCRIPT_HPP_
 
+#include <iterator>
 #include "Shell/ArgParser.hpp"
 #include "Shell/Settings.hpp"
 #include "Shell/ShellScript.hpp"
@@ -21,23 +22,29 @@ public:
 
   virtual Result run() override
   {
-    Arguments arguments;
-    const std::array<ArgParser::Descriptor, 2> descriptors{
-        {
-            {"--help", "print help message", 0, boolArgumentSetter, &arguments.showHelpMessage},
-            {nullptr, nullptr, 1, pathExtractor, &arguments}
-        }
+    static const ArgParser::Descriptor descriptors[] = {
+        {"--help", nullptr, "show this help message and exit", 0, Arguments::helpSetter},
+        {nullptr, "ENTRY", "change current directory to ENTRY", 1, Arguments::pathSetter}
     };
 
-    ArgParser::parse(m_firstArgument, m_lastArgument, descriptors.begin(), descriptors.end());
+    bool argumentsParsed;
+    const Arguments arguments = ArgParser::parse<Arguments>(m_firstArgument, m_lastArgument,
+        std::cbegin(descriptors), std::cend(descriptors), &argumentsParsed);
 
-    if (arguments.showHelpMessage || arguments.relativePath == nullptr)
+    if (arguments.help)
     {
-      ArgParser::help(tty(), descriptors.begin(), descriptors.end());
+      ArgParser::help(tty(), name(), std::cbegin(descriptors), std::cend(descriptors));
       return E_OK;
     }
+    else if (!argumentsParsed)
+    {
+      tty() << name() << ": incorrect arguments" << Terminal::EOL;
+      return E_VALUE;
+    }
     else
-      return changeDirectory(arguments.relativePath);
+    {
+      return changeDirectory(arguments.path);
+    }
   }
 
   static const char *name()
@@ -49,13 +56,23 @@ private:
   struct Arguments
   {
     Arguments() :
-        relativePath{nullptr},
-        showHelpMessage{false}
+      path{nullptr},
+      help{false}
     {
     }
 
-    const char *relativePath;
-    bool showHelpMessage;
+    const char *path;
+    bool help;
+
+    static void helpSetter(void *object, const char *)
+    {
+      static_cast<Arguments *>(object)->help = true;
+    }
+
+    static void pathSetter(void *object, const char *argument)
+    {
+      static_cast<Arguments *>(object)->path = argument;
+    }
   };
 
   Result changeDirectory(const char *relativePath)
@@ -98,21 +115,6 @@ private:
 
     env()["PWD"] = path;
     return E_OK;
-  }
-
-  static void boolArgumentSetter(void *object, const char *)
-  {
-    *static_cast<bool *>(object) = true;
-  }
-
-  static void pathExtractor(void *object, const char *argument)
-  {
-    auto * const args = static_cast<Arguments *>(object);
-
-    if (args->relativePath == nullptr)
-      args->relativePath = argument;
-    else
-      args->showHelpMessage = true;
   }
 };
 

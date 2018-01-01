@@ -12,9 +12,14 @@
 class MockTimeProvider: public TimeProvider
 {
 public:
-  virtual time64_t microtime() override
+  virtual time64_t get() override
   {
     return 0;
+  }
+
+  virtual Result set(time64_t) override
+  {
+    return E_INVALID;
   }
 
   static MockTimeProvider &instance()

@@ -27,7 +27,8 @@
 #include "Shell/Scripts/ListEnvScript.hpp"
 #include "Shell/Scripts/ListNodesScript.hpp"
 #include "Shell/Scripts/MakeDirectoryScript.hpp"
-#include "Shell/Scripts/PrintDataScript.hpp"
+#include "Shell/Scripts/PrintHexDataScript.hpp"
+#include "Shell/Scripts/PrintRawDataScript.hpp"
 #include "Shell/Scripts/RemoveNodesScript.hpp"
 #include "Shell/Scripts/SetEnvScript.hpp"
 #include "Shell/Scripts/Shell.hpp"
@@ -78,7 +79,8 @@ public:
     m_initializer.attach<ListNodesScript>();
     m_initializer.attach<MakeDirectoryScript>();
     m_initializer.attach<MountScript<MmfBuilder>>();
-    m_initializer.attach<PrintDataScript<BUFFER_SIZE>>();
+    m_initializer.attach<PrintHexDataScript<BUFFER_SIZE>>();
+    m_initializer.attach<PrintRawDataScript<BUFFER_SIZE>>();
     m_initializer.attach<RemoveNodesScript>();
     m_initializer.attach<SetEnvScript>();
     m_initializer.attach<Shell>();
@@ -97,12 +99,12 @@ private:
 
   void bootstrap()
   {
-    VfsNode * const binEntry = new VfsDirectory{"bin", UnixTimeProvider::instance().microtime()};
-    const FsFieldDescriptor binEntryConfig[] = {
+    VfsNode * const binEntry = new VfsDirectory{"bin", UnixTimeProvider::instance().get()};
+    const FsFieldDescriptor binEntryFields[] = {
         {&binEntry, sizeof(binEntry), static_cast<FsFieldType>(VfsNode::VFS_NODE_OBJECT)}
     };
     FsNode * const rootEntryNode = static_cast<FsNode *>(fsHandleRoot(m_handle.get()));
-    fsNodeCreate(rootEntryNode, binEntryConfig, ARRAY_SIZE(binEntryConfig));
+    fsNodeCreate(rootEntryNode, binEntryFields, ARRAY_SIZE(binEntryFields));
     fsNodeFree(rootEntryNode);
   }
 

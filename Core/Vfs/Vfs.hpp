@@ -273,7 +273,7 @@ public:
 
   static Result remove(void *object, void *node)
   {
-    return static_cast<VfsNodeProxy *>(object)->removeImpl(node);
+    return static_cast<VfsNodeProxy *>(object)->removeImpl(static_cast<VfsNodeProxy *>(node)->m_node);
   }
 
   static Result write(void *object, FsFieldType type, FsLength position, const void *buffer, size_t bufferLength,

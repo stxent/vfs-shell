@@ -7,6 +7,7 @@
 #ifndef VFS_SHELL_PLATFORM_LINUX_MOUNTSCRIPT_HPP_
 #define VFS_SHELL_PLATFORM_LINUX_MOUNTSCRIPT_HPP_
 
+#include <iterator>
 #include "Shell/Scripts/MountScriptBase.hpp"
 
 template<class T>
@@ -20,29 +21,35 @@ public:
 
   virtual Result run() override
   {
-    Arguments arguments;
-    const std::array<ArgParser::Descriptor, 2> descriptors = {
-        {
-            {"--help", "print help message", 0, boolArgumentSetter, &arguments.showHelpMessage},
-            {nullptr, nullptr, 2, positionalArgumentParser, &arguments}
-        }
+    static const ArgParser::Descriptor descriptors[] = {
+        {"--help", nullptr, "show this help message and exit", 0, Arguments::helpSetter},
+        {nullptr, "IMAGE", "path to the file system image", 1, Arguments::imageSetter},
+        {nullptr, "ENTRY", "path to the virtual entry", 1, Arguments::entrySetter}
     };
 
-    ArgParser::parse(m_firstArgument, m_lastArgument, descriptors.begin(), descriptors.end());
-    if (arguments.src == nullptr || arguments.dst == nullptr || arguments.showHelpMessage)
+    bool argumentsParsed;
+    const Arguments arguments = ArgParser::parse<Arguments>(m_firstArgument, m_lastArgument,
+        std::cbegin(descriptors), std::cend(descriptors), &argumentsParsed);
+
+    if (arguments.help)
     {
-      ArgParser::help(tty(), descriptors.begin(), descriptors.end());
+      ArgParser::help(tty(), name(), std::cbegin(descriptors), std::cend(descriptors));
       return E_OK;
     }
+    else if (!argumentsParsed)
+    {
+      tty() << name() << ": incorrect arguments" << Terminal::EOL;
+      return E_VALUE;
+    }
 
-    Interface * const interface = T::build(arguments.src);
+    Interface * const interface = T::build(arguments.image);
     if (interface == nullptr)
     {
       tty() << name() << ": file not found" << Terminal::EOL;
       return E_VALUE;
     }
 
-    const Result res = mount(arguments.dst, interface);
+    const Result res = mount(arguments.entry, interface);
     if (res != E_OK)
       deinit(interface);
 
@@ -53,33 +60,31 @@ private:
   struct Arguments
   {
     Arguments() :
-      src{nullptr},
-      dst{nullptr},
-      showHelpMessage{false}
+      image{nullptr},
+      entry{nullptr},
+      help{false}
     {
     }
 
-    const char *src;
-    const char *dst;
-    bool showHelpMessage;
+    const char *image;
+    const char *entry;
+    bool help;
+
+    static void helpSetter(void *object, const char *)
+    {
+      static_cast<Arguments *>(object)->help = true;
+    }
+
+    static void imageSetter(void *object, const char *argument)
+    {
+      static_cast<Arguments *>(object)->image = argument;
+    }
+
+    static void entrySetter(void *object, const char *argument)
+    {
+      static_cast<Arguments *>(object)->entry = argument;
+    }
   };
-
-  static void boolArgumentSetter(void *object, const char *)
-  {
-    *static_cast<bool *>(object) = true;
-  }
-
-  static void positionalArgumentParser(void *object, const char *argument)
-  {
-    auto * const args = static_cast<Arguments *>(object);
-
-    if (args->src == nullptr)
-      args->src = argument;
-    else if (args->dst == nullptr)
-      args->dst = argument;
-    else
-      args->showHelpMessage = true; // Incorrect argument count
-  }
 };
 
 #endif // VFS_SHELL_PLATFORM_LINUX_MOUNTSCRIPT_HPP_

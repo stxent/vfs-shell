@@ -22,28 +22,38 @@ public:
   virtual Result run() override
   {
     // Parse and verify arguments
-    Arguments arguments;
-    const std::array<ArgParser::Descriptor, 7> descriptors = {
-        {
-            {"--help", "print help message", 0, boolArgumentSetter, &arguments.showHelpMessage},
-            {"--if", "read from FILE", 1, stringArgumentSetter, &arguments.src},
-            {"--of", "write to FILE", 1, stringArgumentSetter, &arguments.dst},
-            {"--bs", "read and write up to BYTES at a time", 1, sizeArgumentSetter, &arguments.bs},
-            {"--count", "copy only COUNT input blocks", 1, sizeArgumentSetter, &arguments.count},
-            {"--seek", "skip COUNT blocks at start of output", 1, sizeArgumentSetter, &arguments.seek},
-            {"--skip", "skip COUNT blocks at start of input", 1, sizeArgumentSetter, &arguments.skip}
-        }
+    static const ArgParser::Descriptor descriptors[] = {
+        {"--help", nullptr, "show this help message and exit", 0, Arguments::helpSetter},
+        {"--if", "FILE", "read from FILE", 1, Arguments::srcSetter},
+        {"--of", "FILE", "write to FILE", 1, Arguments::dstSetter},
+        {"--bs", "BYTES", "read and write up to BYTES at a time", 1, Arguments::bsSetter},
+        {"--count", "N", "copy only N input blocks", 1, Arguments::countSetter},
+        {"--seek", "N", "skip N blocks at start of output", 1, Arguments::seekSetter},
+        {"--skip", "N", "skip N blocks at start of input", 1, Arguments::skipSetter}
     };
 
-    ArgParser::parse(m_firstArgument, m_lastArgument, descriptors.begin(), descriptors.end());
+    bool argumentsParsed;
+    const Arguments arguments = ArgParser::parse<Arguments>(m_firstArgument, m_lastArgument,
+        std::cbegin(descriptors), std::cend(descriptors), &argumentsParsed);
 
-    if (arguments.src == nullptr || arguments.dst == nullptr || arguments.showHelpMessage)
+    if (arguments.help)
     {
-      ArgParser::help(tty(), descriptors.begin(), descriptors.end());
+      ArgParser::help(tty(), name(), std::cbegin(descriptors), std::cend(descriptors));
       return E_OK;
     }
-    if (arguments.bs > BUFFER_SIZE)
+    else if (!argumentsParsed)
     {
+      tty() << name() << ": incorrect arguments" << Terminal::EOL;
+      return E_VALUE;
+    }
+    else if (arguments.src == nullptr || arguments.dst == nullptr)
+    {
+      tty() << name() << ": source and destination files should be provided" << Terminal::EOL;
+      return E_VALUE;
+    }
+    else if (arguments.bs > BUFFER_SIZE)
+    {
+      tty() << name() << ": block size is too big: " << arguments.bs << ", available " << BUFFER_SIZE << Terminal::EOL;
       return E_VALUE;
     }
 
@@ -69,8 +79,8 @@ public:
     uint8_t buffer[BUFFER_SIZE];
     FsLength pos = static_cast<FsLength>(arguments.seek) * arguments.bs;
 
-    using namespace std::placeholders;
-    res = read(buffer, src, arguments.bs, 0, 0, std::bind(&DirectDataScript::onDataRead, this, dst, &pos, _1, _2));
+    res = read(buffer, src, arguments.bs, 0, 0, std::bind(&DirectDataScript::onDataRead, this, dst, &pos,
+        std::placeholders::_1, std::placeholders::_2));
 
     fsNodeFree(dst);
     fsNodeFree(src);
@@ -93,7 +103,7 @@ private:
       count{0},
       seek{0},
       skip{0},
-      showHelpMessage{false}
+      help{false}
     {
     }
 
@@ -103,7 +113,42 @@ private:
     size_t count;
     size_t seek;
     size_t skip;
-    bool showHelpMessage;
+    bool help;
+
+    static void srcSetter(void *object, const char *argument)
+    {
+      static_cast<Arguments *>(object)->src = argument;
+    }
+
+    static void dstSetter(void *object, const char *argument)
+    {
+      static_cast<Arguments *>(object)->dst = argument;
+    }
+
+    static void bsSetter(void *object, const char *argument)
+    {
+      static_cast<Arguments *>(object)->bs = static_cast<size_t>(atol(argument));
+    }
+
+    static void countSetter(void *object, const char *argument)
+    {
+      static_cast<Arguments *>(object)->count = static_cast<size_t>(atol(argument));
+    }
+
+    static void seekSetter(void *object, const char *argument)
+    {
+      static_cast<Arguments *>(object)->seek = static_cast<size_t>(atol(argument));
+    }
+
+    static void skipSetter(void *object, const char *argument)
+    {
+      static_cast<Arguments *>(object)->skip = static_cast<size_t>(atol(argument));
+    }
+
+    static void helpSetter(void *object, const char *)
+    {
+      static_cast<Arguments *>(object)->help = true;
+    }
   };
 
   Result onDataRead(FsNode *dst, FsLength *position, const void *buffer, size_t bytesRead)
@@ -122,21 +167,6 @@ private:
       *position += bytesWritten;
 
     return res;
-  }
-
-  static void boolArgumentSetter(void *object, const char *)
-  {
-    *static_cast<bool *>(object) = true;
-  }
-
-  static void sizeArgumentSetter(void *object, const char *argument)
-  {
-    *static_cast<size_t *>(object) = static_cast<size_t>(atol(argument));
-  }
-
-  static void stringArgumentSetter(void *object, const char *argument)
-  {
-    *static_cast<const char **>(object) = argument;
   }
 };
 

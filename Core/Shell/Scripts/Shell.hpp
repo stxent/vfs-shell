@@ -9,6 +9,7 @@
 
 #include <atomic>
 #include <iterator>
+#include "Shell/ArgParser.hpp"
 #include "Shell/ShellHelpers.hpp"
 #include "Shell/ShellScript.hpp"
 #include "Shell/TerminalProxy.hpp"
@@ -74,12 +75,22 @@ private:
 
   static const char *extractExecutablePath(ArgumentIterator firstArgument, ArgumentIterator lastArgument)
   {
-    const char *path = nullptr;
-    const ArgParser::Descriptor descriptors[] = {
-        {nullptr, nullptr, 1, positionalArgumentParser, &path}
+    struct Arguments
+    {
+      Arguments() :
+        path{nullptr}
+      {
+      }
+
+      const char *path;
     };
-    ArgParser::parse(firstArgument, lastArgument, std::begin(descriptors), std::end(descriptors));
-    return path;
+
+    static const ArgParser::Descriptor descriptors[] = {
+        {nullptr, "FILE", "read commands from the file system entry", 1, positionalArgumentParser}
+    };
+
+    return ArgParser::parse<Arguments>(firstArgument, lastArgument,
+        std::begin(descriptors), std::end(descriptors)).path;
   }
 
   static void positionalArgumentParser(void *object, const char *argument)

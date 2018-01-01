@@ -22,25 +22,24 @@ public:
 
   virtual Result run() override
   {
-    Arguments arguments;
-    const std::array<ArgParser::Descriptor, 2> descriptors{
-        {
-            {"-r", "remove recursively", 0, boolArgumentSetter, &arguments.removeRecursively},
-            {"--help", "print help message", 0, boolArgumentSetter, &arguments.showHelpMessage}
-        }
+    static const ArgParser::Descriptor descriptors[] = {
+        {"--help", nullptr, "show this help message and exit", 0, Arguments::helpSetter},
+        {"-r", nullptr, "remove recursively", 0, Arguments::recursiveSetter},
+        {nullptr, "ENTRY", "remove ENTRY", 0, nullptr}
     };
 
-    ArgParser::parse(m_firstArgument, m_lastArgument, descriptors.begin(), descriptors.end());
+    const Arguments arguments = ArgParser::parse<Arguments>(m_firstArgument, m_lastArgument,
+        std::cbegin(descriptors), std::cend(descriptors));
 
-    if (arguments.showHelpMessage)
+    if (arguments.help)
     {
-      ArgParser::help(tty(), descriptors.begin(), descriptors.end());
+      ArgParser::help(tty(), name(), std::cbegin(descriptors), std::cend(descriptors));
       return E_OK;
     }
     else
     {
-      ArgParser::invoke(m_firstArgument, m_lastArgument, descriptors.begin(), descriptors.end(),
-          std::bind(&RemoveNodesScript::removeNode, this, std::placeholders::_1, arguments.removeRecursively));
+      ArgParser::invoke(m_firstArgument, m_lastArgument, std::cbegin(descriptors), std::cend(descriptors),
+          std::bind(&RemoveNodesScript::removeNode, this, std::placeholders::_1, arguments.recursive));
       return m_result;
     }
   }
@@ -54,13 +53,23 @@ private:
   struct Arguments
   {
     Arguments() :
-      removeRecursively{false},
-      showHelpMessage{false}
+      help{false},
+      recursive{false}
     {
     }
 
-    bool removeRecursively;
-    bool showHelpMessage;
+    bool help;
+    bool recursive;
+
+    static void helpSetter(void *object, const char *)
+    {
+      static_cast<Arguments *>(object)->help = true;
+    }
+
+    static void recursiveSetter(void *object, const char *)
+    {
+      static_cast<Arguments *>(object)->recursive = true;
+    }
   };
 
   Result m_result;
@@ -108,11 +117,6 @@ private:
       tty() << name() << ": " << positionalArgument << ": node not found" << Terminal::EOL;
       m_result = E_ENTRY;
     }
-  }
-
-  static void boolArgumentSetter(void *object, const char *)
-  {
-    *static_cast<bool *>(object) = true;
   }
 };
 

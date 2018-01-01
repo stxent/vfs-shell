@@ -15,30 +15,35 @@ class MakeDirectoryScript: public ShellScript
 {
 public:
   MakeDirectoryScript(Script *parent, ArgumentIterator firstArgument, ArgumentIterator lastArgument) :
-    ShellScript{parent, firstArgument, lastArgument},
-    m_result{E_OK}
+    ShellScript{parent, firstArgument, lastArgument}
   {
   }
 
   virtual Result run() override
   {
-    Arguments arguments;
-    const std::array<ArgParser::Descriptor, 2> descriptors{
-        {
-            {"--help", "print help message", 0, boolArgumentSetter, &arguments.showHelpMessage},
-            {nullptr, nullptr, 1, positionalArgumentParser, &arguments}
-        }
+    static const ArgParser::Descriptor descriptors[] = {
+        {"--help", nullptr, "show this help message and exit", 0, Arguments::helpSetter},
+        {nullptr, "ENTRY", "make directory named ENTRY", 1, Arguments::pathSetter}
     };
 
-    ArgParser::parse(m_firstArgument, m_lastArgument, descriptors.begin(), descriptors.end());
+    bool argumentsParsed;
+    const Arguments arguments = ArgParser::parse<Arguments>(m_firstArgument, m_lastArgument,
+        std::cbegin(descriptors), std::cend(descriptors), &argumentsParsed);
 
-    if (arguments.showHelpMessage || arguments.target == nullptr)
+    if (arguments.help)
     {
-      ArgParser::help(tty(), descriptors.begin(), descriptors.end());
+      ArgParser::help(tty(), name(), std::cbegin(descriptors), std::cend(descriptors));
       return E_OK;
     }
+    else if (!argumentsParsed)
+    {
+      tty() << name() << ": incorrect arguments" << Terminal::EOL;
+      return E_VALUE;
+    }
     else
-      return makeDirectory(arguments.target);
+    {
+      return makeDirectory(arguments.path);
+    }
   }
 
   static const char *name()
@@ -50,16 +55,24 @@ private:
   struct Arguments
   {
     Arguments() :
-      target{nullptr},
-      showHelpMessage{false}
+      path{nullptr},
+      help{false}
     {
     }
 
-    const char *target;
-    bool showHelpMessage;
-  };
+    const char *path;
+    bool help;
 
-  Result m_result;
+    static void helpSetter(void *object, const char *)
+    {
+      static_cast<Arguments *>(object)->help = true;
+    }
+
+    static void pathSetter(void *object, const char *argument)
+    {
+      static_cast<Arguments *>(object)->path = argument;
+    }
+  };
 
   Result makeDirectory(const char *positionalArgument)
   {
@@ -75,8 +88,8 @@ private:
       if (node == nullptr)
       {
         const char * const nodeName = ShellHelpers::extractName(positionalArgument);
-        const auto nodeTime = time().microtime();
-        const FsFieldDescriptor descriptors[] = {
+        const auto nodeTime = time().get();
+        const FsFieldDescriptor fields[] = {
             // Name descriptor
             {
                 nodeName,
@@ -91,7 +104,7 @@ private:
             }
         };
 
-        res = fsNodeCreate(root, descriptors, ARRAY_SIZE(descriptors));
+        res = fsNodeCreate(root, fields, ARRAY_SIZE(fields));
         if (res != E_OK)
           tty() << name() << ": " << positionalArgument << ": directory creation failed" << Terminal::EOL;
       }
@@ -111,21 +124,6 @@ private:
     }
 
     return res;
-  }
-
-  static void boolArgumentSetter(void *object, const char *)
-  {
-    *static_cast<bool *>(object) = true;
-  }
-
-  static void positionalArgumentParser(void *object, const char *argument)
-  {
-    auto * const args = static_cast<Arguments *>(object);
-
-    if (args->target == nullptr)
-      args->target = argument;
-    else
-      args->showHelpMessage = true; // Incorrect argument count
   }
 };
 
