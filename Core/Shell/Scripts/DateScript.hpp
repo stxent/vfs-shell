@@ -22,6 +22,7 @@ public:
   {
     static const ArgParser::Descriptor descriptors[] = {
         {"--help", nullptr, "show this help message and exit", 0, Arguments::helpSetter},
+        {"-a", "STRING", "set alarm to time described by STRING", 1, Arguments::alarmSetter},
         {"-s", "STRING", "set time described by STRING", 1, Arguments::timeSetter}
     };
 
@@ -36,8 +37,11 @@ public:
     }
     else if (!argumentsParsed)
     {
-      tty() << name() << ": incorrect arguments" << Terminal::EOL;
       return E_VALUE;
+    }
+    else if (arguments.alarm != nullptr)
+    {
+      return setAlarm(arguments.alarm);
     }
     else if (arguments.time != nullptr)
     {
@@ -58,13 +62,20 @@ private:
   struct Arguments
   {
     Arguments() :
+      alarm{nullptr},
       time{nullptr},
       help{false}
     {
     }
 
+    const char *alarm;
     const char *time;
     bool help;
+
+    static void alarmSetter(void *object, const char *argument)
+    {
+      static_cast<Arguments *>(object)->alarm = argument;
+    }
 
     static void timeSetter(void *object, const char *argument)
     {
@@ -77,11 +88,59 @@ private:
     }
   };
 
-  Result setTime(const char *value)
+  Result setAlarm(const char *inputString)
+  {
+    time64_t timestamp;
+    Result res;
+
+    if (stringToTimestamp(inputString, &timestamp))
+      res = time().setAlarm(timestamp * 1000000);
+    else
+      res = E_VALUE;
+
+    return res;
+  }
+
+  Result setTime(const char *inputString)
+  {
+    time64_t timestamp;
+    Result res;
+
+    if (stringToTimestamp(inputString, &timestamp))
+      res = time().setTime(timestamp * 1000000);
+    else
+      res = E_VALUE;
+
+    return res;
+  }
+
+  Result showTime()
+  {
+    RtDateTime currentTime;
+    rtMakeTime(&currentTime, time().getTime() / 1000000);
+
+    const auto fill = tty().fill();
+    const auto width = tty().width();
+
+    tty() << Terminal::Fill{'0'} << Terminal::Width{2};
+    tty() << static_cast<unsigned int>(currentTime.hour);
+    tty() << ":" << static_cast<unsigned int>(currentTime.minute);
+    tty() << ":" << static_cast<unsigned int>(currentTime.second);
+    tty() << " " << static_cast<unsigned int>(currentTime.day);
+    tty() << "." << static_cast<unsigned int>(currentTime.month);
+    tty() << Terminal::Width{4};
+    tty() << "." << static_cast<unsigned int>(currentTime.year);
+    tty() << Terminal::EOL;
+    tty() << width << fill;
+
+    return E_OK;
+  }
+
+  static bool stringToTimestamp(const char *inputString, time64_t *result)
   {
     unsigned int hour, minute, second, day, month, year;
 
-    if (sscanf(value, "%u:%u:%u %u.%u.%u", &hour, &minute, &second, &day, &month, &year) == 6)
+    if (sscanf(inputString, "%u:%u:%u %u.%u.%u", &hour, &minute, &second, &day, &month, &year) == 6)
     {
       const RtDateTime dateTime = {
           static_cast<uint16_t>(year),
@@ -91,38 +150,11 @@ private:
           static_cast<uint8_t>(minute),
           static_cast<uint8_t>(second)
       };
-      time64_t timestamp;
 
-      Result res = rtMakeEpochTime(&timestamp, &dateTime);
-      if (res == E_OK)
-        res = time().set(timestamp * 1000000);
-
-      return res;
+      return rtMakeEpochTime(result, &dateTime) == E_OK;
     }
     else
-    {
-      return E_VALUE;
-    }
-  }
-
-  Result showTime()
-  {
-    RtDateTime currentTime;
-    rtMakeTime(&currentTime, time().get() / 1000000);
-
-    // TODO Output types, restore initial terminal settings
-    tty() << Terminal::Width{2} << Terminal::Fill{'0'};
-    tty() << static_cast<unsigned int>(currentTime.hour);
-    tty() << ":" << static_cast<unsigned int>(currentTime.minute);
-    tty() << ":" << static_cast<unsigned int>(currentTime.second);
-    tty() << " " << static_cast<unsigned int>(currentTime.day);
-    tty() << "." << static_cast<unsigned int>(currentTime.month);
-    tty() << Terminal::Width{4};
-    tty() << "." << static_cast<unsigned int>(currentTime.year);
-    tty() << Terminal::Fill{' '} << Terminal::Width{1};
-    tty() << Terminal::EOL;
-
-    return E_OK;
+      return false;
   }
 };
 

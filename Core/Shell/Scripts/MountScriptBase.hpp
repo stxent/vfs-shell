@@ -46,7 +46,7 @@ protected:
     {
       // Create VFS node
       VfsNode * const mountpoint = new VfsMountpoint{ShellHelpers::extractName(dst), partition, interface,
-          time().get(), FS_ACCESS_READ | FS_ACCESS_WRITE};
+          time().getTime(), FS_ACCESS_READ | FS_ACCESS_WRITE};
 
       // Link VFS node to the existing file tree
       const FsFieldDescriptor fields[] = {

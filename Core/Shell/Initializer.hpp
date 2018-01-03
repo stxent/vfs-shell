@@ -60,7 +60,7 @@ public:
     memcpy(wrapper, ScriptHeaders::OBJECT_HEADER, sizeof(ScriptHeaders::OBJECT_HEADER));
     memcpy(wrapper + ScriptHeaders::OBJECT_HEADER_SIZE, &runner, sizeof(runner));
 
-    const auto nodeTime = time().get();
+    const auto nodeTime = time().getTime();
     const FsFieldDescriptor runnerEntryFields[] = {
         {T::name(), strlen(T::name()) + 1, FS_NODE_NAME},
         {&nodeTime, sizeof(nodeTime), FS_NODE_TIME},

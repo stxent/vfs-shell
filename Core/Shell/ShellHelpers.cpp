@@ -233,7 +233,7 @@ FsNode *ShellHelpers::openSink(FsHandle *fs, Environment &env, TimeProvider &tim
     if (res == E_OK)
     {
       const char * const nodeName = ShellHelpers::extractName(absolutePath);
-      const auto nodeTime = time.get();
+      const auto nodeTime = time.getTime();
       const FsFieldDescriptor fields[] = {
           // Name descriptor
           {

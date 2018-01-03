@@ -12,12 +12,17 @@
 class MockTimeProvider: public TimeProvider
 {
 public:
-  virtual time64_t get() override
+  virtual time64_t getTime() override
   {
     return 0;
   }
 
-  virtual Result set(time64_t) override
+  virtual Result setAlarm(time64_t) override
+  {
+    return E_INVALID;
+  }
+
+  virtual Result setTime(time64_t) override
   {
     return E_INVALID;
   }

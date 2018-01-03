@@ -139,7 +139,7 @@ private:
 
   void bootstrap()
   {
-    VfsNode * const binEntry = new VfsDirectory{"bin", MockTimeProvider::instance().get()};
+    VfsNode * const binEntry = new VfsDirectory{"bin", MockTimeProvider::instance().getTime()};
     const FsFieldDescriptor binEntryFields[] = {
         {&binEntry, sizeof(binEntry), static_cast<FsFieldType>(VfsNode::VFS_NODE_OBJECT)}
     };

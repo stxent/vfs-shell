@@ -15,11 +15,14 @@ public:
   UnixTimeProvider(const UnixTimeProvider &) = delete;
   UnixTimeProvider &operator=(const UnixTimeProvider &) = delete;
 
-  virtual ~UnixTimeProvider();
+  virtual time64_t getTime() override;
 
-  virtual time64_t get() override;
+  virtual Result setAlarm(time64_t) override
+  {
+    return E_INVALID;
+  }
 
-  virtual Result set(time64_t) override
+  virtual Result setTime(time64_t) override
   {
     return E_INVALID;
   }
@@ -31,9 +34,7 @@ public:
   }
 
 private:
-  UnixTimeProvider();
-
-  RtClock *clock;
+  UnixTimeProvider() = default;
 };
 
 #endif // VFS_SHELL_PLATFORM_LINUX_UNIXTIMEPROVIDER_HPP_

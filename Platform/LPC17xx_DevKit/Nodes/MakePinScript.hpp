@@ -124,9 +124,9 @@ private:
 
       // Initialize pin as output or input depending on the arguments of the command
       if (output)
-        entry = new PinNode{ShellHelpers::extractName(path), port, pin, value, time().get()};
+        entry = new PinNode{ShellHelpers::extractName(path), port, pin, value, time().getTime()};
       else
-        entry = new PinNode{ShellHelpers::extractName(path), port, pin, time().get()};
+        entry = new PinNode{ShellHelpers::extractName(path), port, pin, time().getTime()};
 
       // Link VFS node to the existing file tree
       const FsFieldDescriptor fields[] = {

@@ -20,7 +20,7 @@ public:
   RealTimeClock(const RealTimeClock &) = delete;
   RealTimeClock &operator=(const RealTimeClock &) = delete;
 
-  virtual time64_t get() override
+  virtual time64_t getTime() override
   {
     time64_t globalTick;
     uint32_t currentTick;
@@ -33,9 +33,14 @@ public:
     return globalTick + static_cast<time64_t>(currentTick);
   }
 
-  virtual Result set(time64_t value) override
+  virtual Result setAlarm(time64_t timestamp) override
   {
-    const RtcConfig updatedRealtimeClockConfig{value / 1000000, 0};
+    return rtSetAlarm(m_realtime.get(), timestamp / 1000000);
+  }
+
+  virtual Result setTime(time64_t timestamp) override
+  {
+    const RtcConfig updatedRealtimeClockConfig{timestamp / 1000000, 0};
 
     m_realtime.reset();
     m_realtime = {static_cast<RtClock *>(init(Rtc, &updatedRealtimeClockConfig)), clockDeleter};

@@ -19,10 +19,10 @@ public:
 
   virtual Result run() override
   {
-    const auto start = time().get();
+    const auto start = time().getTime();
     Evaluator<ArgumentIterator> evaluator{this, m_firstArgument, m_lastArgument};
     const Result res = evaluator.run();
-    const auto delta = time().get() - start;
+    const auto delta = time().getTime() - start;
 
     // TODO Save and restore fill and width
     tty() << "elapsed " << delta / 1000000 << "." << Terminal::Fill{'0'} << Terminal::Width{6} << delta % 1000000

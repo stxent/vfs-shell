@@ -88,7 +88,7 @@ private:
       if (node == nullptr)
       {
         const char * const nodeName = ShellHelpers::extractName(positionalArgument);
-        const auto nodeTime = time().get();
+        const auto nodeTime = time().getTime();
         const FsFieldDescriptor fields[] = {
             // Name descriptor
             {
