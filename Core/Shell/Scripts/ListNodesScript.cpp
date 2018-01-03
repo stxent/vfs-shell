@@ -41,7 +41,6 @@ Terminal &operator<<(Terminal &output, ListNodesScript::HumanReadableLength leng
     output << suffixes[index];
 
   output << Terminal::Width{initialWidth};
-
   return output;
 }
 

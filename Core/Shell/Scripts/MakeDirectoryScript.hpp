@@ -35,14 +35,13 @@ public:
       ArgParser::help(tty(), name(), std::cbegin(descriptors), std::cend(descriptors));
       return E_OK;
     }
-    else if (!argumentsParsed)
+    else if (argumentsParsed)
     {
-      tty() << name() << ": incorrect arguments" << Terminal::EOL;
-      return E_VALUE;
+      return makeDirectory(arguments.path);
     }
     else
     {
-      return makeDirectory(arguments.path);
+      return E_VALUE;
     }
   }
 

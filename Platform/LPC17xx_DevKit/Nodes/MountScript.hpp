@@ -37,7 +37,6 @@ public:
     }
     else if (!argumentsParsed)
     {
-      tty() << name() << ": incorrect arguments" << Terminal::EOL;
       return E_VALUE;
     }
 

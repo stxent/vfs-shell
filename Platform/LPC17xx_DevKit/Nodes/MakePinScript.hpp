@@ -39,14 +39,13 @@ public:
       ArgParser::help(tty(), name(), std::cbegin(descriptors), std::cend(descriptors));
       return E_OK;
     }
-    else if (!argumentsParsed)
+    else if (argumentsParsed)
     {
-      tty() << name() << ": incorrect arguments" << Terminal::EOL;
-      return E_VALUE;
+      return makePin(arguments.path, arguments.port, arguments.pin, arguments.output, arguments.value);
     }
     else
     {
-      return makePin(arguments.path, arguments.port, arguments.pin, arguments.output, arguments.value);
+      return E_VALUE;
     }
   }
 
