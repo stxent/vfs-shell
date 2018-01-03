@@ -118,31 +118,18 @@ void *VfsDirectory::head()
 {
   VfsHandle::Locker locker(*m_handle);
   return !m_nodes.empty() ? m_handle->makeNodeProxy(m_nodes.front()) : nullptr;
-//   return this;
 }
 
 VfsNode *VfsDirectory::fetch(VfsNode *current)
 {
   VfsHandle::Locker locker(*m_handle);
+  auto iter = std::find(m_nodes.begin(), m_nodes.end(), current);
 
-//   if (current == this)
-//   {
-//     return parent;
-//   }
-//   else if (current == parent)
-//   {
-//     return !nodes.empty() ? nodes.front() : nullptr;
-//   }
-//   else
-  {
-    // TODO Optimize
-    auto iter = std::find(m_nodes.begin(), m_nodes.end(), current);
-
-    if (iter != m_nodes.end() && ++iter != m_nodes.end())
-      return *iter;
-    else
-      return nullptr;
-  }
+  // TODO Optimize
+  if (iter != m_nodes.end() && ++iter != m_nodes.end())
+    return *iter;
+  else
+    return nullptr;
 }
 
 Result VfsDirectory::remove(VfsNode *node)

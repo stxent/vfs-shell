@@ -8,6 +8,7 @@
 #define VFS_SHELL_CORE_SHELL_EVALUATOR_HPP_
 
 #include <memory>
+#include <type_traits>
 #include "Shell/Script.hpp"
 #include "Shell/ShellHelpers.hpp"
 #include "Shell/TerminalProxy.hpp"
@@ -98,10 +99,6 @@ public:
 
 private:
   Script * const m_parent;
-//  T firstArgument;
-//  T lastArgument;
-//  T inputPathArgument;
-//  T outputPathArgument;
   const T m_firstArgument;
   const T m_lastArgument;
   const T m_inputPathArgument;
@@ -110,27 +107,17 @@ private:
 
   static T extractInputPath(T firstArgument, T lastArgument)
   {
-//    auto argument = std::find_if(first, last, [](T entry){ return !strcmp(*entry, "<"); });
-    auto argument = firstArgument;
-    while (argument != lastArgument)
-    {
-      if (!strcmp(*argument, "<"))
-        break;
-      ++argument;
-    }
+    auto argument = std::find_if(firstArgument, lastArgument,
+        [](std::remove_pointer_t<T> entry){ return !strcmp(entry, "<"); });
+
     return (argument != lastArgument && argument + 1 != lastArgument) ? argument : lastArgument;
   }
 
   static T extractOutputPath(T firstArgument, T lastArgument)
   {
-//    auto argument = std::find_if(first, last, [](T entry){ return !strcmp(*entry, ">") || !strcmp(*entry, ">>"); });
-    auto argument = firstArgument;
-    while (argument != lastArgument)
-    {
-      if (!strcmp(*argument, ">") || !strcmp(*argument, ">>"))
-        break;
-      ++argument;
-    }
+    auto argument = std::find_if(firstArgument, lastArgument,
+        [](std::remove_pointer_t<T> entry){ return !strcmp(entry, ">") || !strcmp(entry, ">>"); });
+
     return (argument != lastArgument && argument + 1 != lastArgument) ? argument : lastArgument;
   }
 
