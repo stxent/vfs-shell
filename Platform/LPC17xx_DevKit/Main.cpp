@@ -39,6 +39,7 @@
 
 #include "CardBuilder.hpp"
 #include "InterfaceWrapper.hpp"
+#include "Nodes/CpuFrequencyScript.hpp"
 #include "Nodes/MakePinScript.hpp"
 #include "Nodes/MountScript.hpp"
 #include "Nodes/ShutdownScript.hpp"
@@ -103,6 +104,7 @@ public:
     m_initializer.attach<ChangeDirectoryScript>();
     m_initializer.attach<ChecksumCrc32Script<BUFFER_SIZE>>();
     m_initializer.attach<CopyNodeScript<BUFFER_SIZE>>();
+    m_initializer.attach<CpuFrequencyScript<12000000>>();
     m_initializer.attach<DateScript>();
     m_initializer.attach<DirectDataScript<BUFFER_SIZE>>();
     m_initializer.attach<EchoScript>();
