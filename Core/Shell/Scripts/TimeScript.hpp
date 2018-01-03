@@ -24,9 +24,13 @@ public:
     const Result res = evaluator.run();
     const auto delta = time().getTime() - start;
 
-    // TODO Save and restore fill and width
-    tty() << "elapsed " << delta / 1000000 << "." << Terminal::Fill{'0'} << Terminal::Width{6} << delta % 1000000
-        << Terminal::Width{1} << Terminal::Fill{' '} << " s" << Terminal::EOL;
+    const auto fill = tty().fill();
+    const auto width = tty().width();
+
+    tty() << "elapsed ";
+    tty() << delta / 1000000 << "." << Terminal::Fill{'0'} << Terminal::Width{6} << delta % 1000000;
+    tty() << " s" << Terminal::EOL;
+    tty() << width << fill;
 
     return res;
   }

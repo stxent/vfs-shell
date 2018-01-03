@@ -120,9 +120,12 @@ private:
 
       if (m_result == E_OK)
       {
+        const auto format = tty().format();
+        const auto width = tty().width();
+
         tty() << Terminal::Width{8} << Terminal::Format::HEX;
         tty() << checksum << "  " << positionalArgument << Terminal::EOL;
-        tty() << Terminal::Format::DEC << Terminal::Width{1};
+        tty() << format << width;
       }
     }
     else

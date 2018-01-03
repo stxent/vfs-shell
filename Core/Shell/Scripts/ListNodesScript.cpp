@@ -163,6 +163,9 @@ void ListNodesScript::printDirectoryContent(const char *positionalArgument)
           nodeTimeFrac);
 
       // Print all values
+      const auto format = tty().format();
+      const auto width = tty().width();
+
       if (m_arguments.showInodes)
         tty() << Terminal::Width{16} << Terminal::Format::HEX << nodeId << Terminal::Width{1} << Terminal::Format::DEC;
 
@@ -176,6 +179,7 @@ void ListNodesScript::printDirectoryContent(const char *positionalArgument)
       tty() << " " << printableNodeTime;
       tty() << " " << nodeName;
       tty() << Terminal::EOL;
+      tty() << format << width;
     }
     else
     {
