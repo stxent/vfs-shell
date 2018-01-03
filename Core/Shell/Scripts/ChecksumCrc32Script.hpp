@@ -10,7 +10,6 @@
 #include <xcore/crc/crc32.h>
 #include "Shell/ArgParser.hpp"
 #include "Shell/Scripts/DataReader.hpp"
-#include "Wrappers/Semaphore.hpp"
 
 template<size_t BUFFER_SIZE>
 class ChecksumCrc32Script: public DataReader
@@ -18,25 +17,8 @@ class ChecksumCrc32Script: public DataReader
 public:
   ChecksumCrc32Script(Script *parent, ArgumentIterator firstArgument, ArgumentIterator lastArgument) :
     DataReader{parent, firstArgument, lastArgument},
-    m_result{E_OK},
-    m_semaphore{0}
+    m_result{E_OK}
   {
-  }
-
-  virtual Result onEventReceived(const ScriptEvent *event) override
-  {
-    switch (event->event)
-    {
-      case ScriptEvent::Event::SERIAL_INPUT:
-        if (m_semaphore.value() <= 0)
-          m_semaphore.post();
-        break;
-
-      default:
-        break;
-    }
-
-    return E_OK;
   }
 
   virtual Result run() override
@@ -86,16 +68,9 @@ private:
   };
 
   Result m_result;
-  Semaphore m_semaphore;
 
   Result onDataRead(uint32_t *checksum, const void *buffer, size_t bytesRead)
   {
-    while (m_semaphore.tryWait())
-    {
-      if (checkForTerminateRequest())
-        return E_TIMEOUT;
-    }
-
     *checksum = crc32Update(*checksum, buffer, bytesRead);
     return E_OK;
   }
@@ -133,24 +108,6 @@ private:
       tty() << name() << ": " << positionalArgument << ": open failed" << Terminal::EOL;
       m_result = E_ENTRY;
     }
-  }
-
-  bool checkForTerminateRequest()
-  {
-    static constexpr size_t RX_BUFFER = 16;
-    char rxBuffer[RX_BUFFER];
-    size_t rxCount;
-
-    while ((rxCount = tty().read(rxBuffer, sizeof(rxBuffer))))
-    {
-      for (size_t i = 0; i < rxCount; ++i)
-      {
-        if (rxBuffer[i] == '\x03') // End of text
-          return true;
-      }
-    }
-
-    return false;
   }
 };
 
