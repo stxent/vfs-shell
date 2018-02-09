@@ -1,11 +1,11 @@
 /*
- * Platform/LPC17xx_DevKit/Nodes/ShutdownScript.hpp
+ * Platform/LPC17xx_DevKit/Scripts/ShutdownScript.hpp
  * Copyright (C) 2018 xent
  * Project is distributed under the terms of the GNU General Public License v3.0
  */
 
-#ifndef VFS_SHELL_PLATFORM_LPC17XX_DEVKIT_NODES_SHUTDOWNSCRIPT_HPP_
-#define VFS_SHELL_PLATFORM_LPC17XX_DEVKIT_NODES_SHUTDOWNSCRIPT_HPP_
+#ifndef VFS_SHELL_PLATFORM_LPC17XX_DEVKIT_SCRIPTS_SHUTDOWNSCRIPT_HPP_
+#define VFS_SHELL_PLATFORM_LPC17XX_DEVKIT_SCRIPTS_SHUTDOWNSCRIPT_HPP_
 
 #include <halm/core/cortex/nvic.h>
 #include <halm/platform/nxp/backup_domain.h>
@@ -96,4 +96,4 @@ private:
   };
 };
 
-#endif // VFS_SHELL_PLATFORM_LPC17XX_DEVKIT_NODES_SHUTDOWNSCRIPT_HPP_
+#endif // VFS_SHELL_PLATFORM_LPC17XX_DEVKIT_SCRIPTS_SHUTDOWNSCRIPT_HPP_

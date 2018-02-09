@@ -1,11 +1,11 @@
 /*
- * Platform/LPC17xx_DevKit/Nodes/MakePinScript.hpp
+ * Platform/LPC17xx_DevKit/Scripts/MakePinScript.hpp
  * Copyright (C) 2017 xent
  * Project is distributed under the terms of the GNU General Public License v3.0
  */
 
-#ifndef VFS_SHELL_PLATFORM_LPC17XX_DEVKIT_NODES_MAKEPINSCRIPT_HPP_
-#define VFS_SHELL_PLATFORM_LPC17XX_DEVKIT_NODES_MAKEPINSCRIPT_HPP_
+#ifndef VFS_SHELL_PLATFORM_LPC17XX_DEVKIT_SCRIPTS_MAKEPINSCRIPT_HPP_
+#define VFS_SHELL_PLATFORM_LPC17XX_DEVKIT_SCRIPTS_MAKEPINSCRIPT_HPP_
 
 #include "Nodes/PinNode.hpp"
 #include "Shell/Settings.hpp"
@@ -144,4 +144,4 @@ private:
   }
 };
 
-#endif // VFS_SHELL_PLATFORM_LPC17XX_DEVKIT_NODES_MAKEPINSCRIPT_HPP_
+#endif // VFS_SHELL_PLATFORM_LPC17XX_DEVKIT_SCRIPTS_MAKEPINSCRIPT_HPP_

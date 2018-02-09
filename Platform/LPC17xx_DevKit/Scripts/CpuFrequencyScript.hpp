@@ -1,11 +1,11 @@
 /*
- * Platform/LPC17xx_DevKit/Nodes/CpuFrequencyScript.hpp
+ * Platform/LPC17xx_DevKit/Scripts/CpuFrequencyScript.hpp
  * Copyright (C) 2018 xent
  * Project is distributed under the terms of the GNU General Public License v3.0
  */
 
-#ifndef VFS_SHELL_PLATFORM_LPC17XX_DEVKIT_NODES_CPUFREQUENCYSCRIPT_HPP_
-#define VFS_SHELL_PLATFORM_LPC17XX_DEVKIT_NODES_CPUFREQUENCYSCRIPT_HPP_
+#ifndef VFS_SHELL_PLATFORM_LPC17XX_DEVKIT_SCRIPTS_CPUFREQUENCYSCRIPT_HPP_
+#define VFS_SHELL_PLATFORM_LPC17XX_DEVKIT_SCRIPTS_CPUFREQUENCYSCRIPT_HPP_
 
 #include <limits>
 #include <tuple>
@@ -158,4 +158,4 @@ private:
   }
 };
 
-#endif // VFS_SHELL_PLATFORM_LPC17XX_DEVKIT_NODES_CPUFREQUENCYSCRIPT_HPP_
+#endif // VFS_SHELL_PLATFORM_LPC17XX_DEVKIT_SCRIPTS_CPUFREQUENCYSCRIPT_HPP_

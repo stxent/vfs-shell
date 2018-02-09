@@ -6,6 +6,7 @@
 
 #include <cassert>
 
+#include <halm/core/cortex/nvic.h>
 #include <halm/generic/sdio_spi.h>
 #include <halm/pin.h>
 #include <halm/platform/nxp/gptimer.h>
@@ -39,16 +40,17 @@
 
 #include "CardBuilder.hpp"
 #include "InterfaceWrapper.hpp"
-#include "Nodes/CpuFrequencyScript.hpp"
-#include "Nodes/MakePinScript.hpp"
-#include "Nodes/MountScript.hpp"
-#include "Nodes/ShutdownScript.hpp"
+#include "Scripts/CpuFrequencyScript.hpp"
+#include "Scripts/MakeDacScript.hpp"
+#include "Scripts/MakePinScript.hpp"
+#include "Scripts/MountScript.hpp"
+#include "Scripts/ShutdownScript.hpp"
 #include "RealTimeClock.hpp"
 
 static void enableClock()
 {
   static const ExternalOscConfig extOscConfig = {12000000, false};
-  static const PllConfig sysPllConfig = {CLOCK_EXTERNAL, 3, 24};
+  static const PllConfig sysPllConfig = {CLOCK_EXTERNAL, 3, 25};
   static const CommonClockConfig mainClkConfig = {CLOCK_PLL};
 
   clockEnable(ExternalOsc, &extOscConfig);
@@ -96,7 +98,7 @@ public:
   {
     bootstrap();
 
-    if (ShutdownScript::isRestarted)
+    if (ShutdownScript::isRestarted())
     {
       m_terminal << "System restarted" << Terminal::EOL;
     }
@@ -113,6 +115,7 @@ public:
     m_initializer.attach<HelpScript>();
     m_initializer.attach<ListEnvScript>();
     m_initializer.attach<ListNodesScript>();
+    m_initializer.attach<MakeDacScript>();
     m_initializer.attach<MakeDirectoryScript>();
     m_initializer.attach<MakePinScript>();
     m_initializer.attach<MountScript<CardBuilder>>(m_sdioWrapper.get());
@@ -199,10 +202,6 @@ int main()
   application->run();
   delete application;
 
-  while (1)
-  {
-    pmChangeState(PM_SLEEP);
-  }
-
-  return 0;
+  nvicResetCore();
+  return 0; // Unreachable code
 }

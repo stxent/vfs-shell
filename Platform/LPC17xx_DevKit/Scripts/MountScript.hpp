@@ -1,11 +1,11 @@
 /*
- * Platform/LPC17xx_DevKit/Nodes/MountScript.hpp
+ * Platform/LPC17xx_DevKit/Scripts/MountScript.hpp
  * Copyright (C) 2017 xent
  * Project is distributed under the terms of the GNU General Public License v3.0
  */
 
-#ifndef VFS_SHELL_PLATFORM_LPC17XX_DEVKIT_NODES_MOUNTSCRIPT_HPP_
-#define VFS_SHELL_PLATFORM_LPC17XX_DEVKIT_NODES_MOUNTSCRIPT_HPP_
+#ifndef VFS_SHELL_PLATFORM_LPC17XX_DEVKIT_SCRIPTS_MOUNTSCRIPT_HPP_
+#define VFS_SHELL_PLATFORM_LPC17XX_DEVKIT_SCRIPTS_MOUNTSCRIPT_HPP_
 
 #include "Shell/Scripts/MountScriptBase.hpp"
 
@@ -80,4 +80,4 @@ private:
   };
 };
 
-#endif // VFS_SHELL_PLATFORM_LPC17XX_DEVKIT_NODES_MOUNTSCRIPT_HPP_
+#endif // VFS_SHELL_PLATFORM_LPC17XX_DEVKIT_SCRIPTS_MOUNTSCRIPT_HPP_
