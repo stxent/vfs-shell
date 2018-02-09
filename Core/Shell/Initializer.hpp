@@ -49,13 +49,13 @@ public:
     fsNodeFree(binEntryNode);
   }
 
-  template<class T, class... ARGS>
-  void attach(ARGS... args)
+  template<class T, class... ARGs>
+  void attach(ARGs... args)
   {
     FsNode * const binEntryNode = ShellHelpers::openNode(fs(), env()["PATH"]);
     assert(binEntryNode != nullptr);
 
-    ScriptRunnerBase * const runner = new ScriptRunner<T, ARGS...>{args...};
+    ScriptRunnerBase * const runner = new ScriptRunner<T, ARGs...>{args...};
     uint8_t wrapper[ScriptHeaders::OBJECT_HEADER_SIZE + sizeof(runner)];
     memcpy(wrapper, ScriptHeaders::OBJECT_HEADER, sizeof(ScriptHeaders::OBJECT_HEADER));
     memcpy(wrapper + ScriptHeaders::OBJECT_HEADER_SIZE, &runner, sizeof(runner));

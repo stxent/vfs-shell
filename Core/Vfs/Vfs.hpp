@@ -43,6 +43,8 @@ public:
       m_name = nullptr;
   }
 
+  VfsNode(VfsNode &&) = default;
+
   virtual ~VfsNode() = default;
 
   virtual Result create(const FsFieldDescriptor *, size_t)
@@ -197,13 +199,13 @@ public:
     return E_OK;
   }
 
-  void enter(VfsHandle *handle, VfsNode *node)
+  virtual void enter(VfsHandle *handle, VfsNode *node)
   {
     m_handle = handle;
     m_parent = node;
   }
 
-  void leave()
+  virtual void leave()
   {
     m_handle = nullptr;
     m_parent = nullptr;

@@ -49,7 +49,17 @@ public:
   virtual size_t write(const char *buffer, size_t length) override
   {
     // TODO Locks
-    return ifWrite(m_interface, buffer, length);
+    const char *position = buffer;
+    size_t left = length;
+
+    while (left)
+    {
+      const size_t bytesWritten = ifWrite(m_interface, position, left);
+      left -= bytesWritten;
+      position += bytesWritten;
+    }
+
+    return length;
   }
 
 private:

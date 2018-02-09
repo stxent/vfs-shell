@@ -17,6 +17,18 @@
 template<unsigned long INPUT_FREQUENCY>
 class CpuFrequencyScript: public ShellScript
 {
+  struct PllValues
+  {
+    unsigned int div;
+    unsigned int mul;
+
+    PllValues() :
+      div{},
+      mul{}
+    {
+    }
+  };
+
 public:
   CpuFrequencyScript(Script *parent, ArgumentIterator firstArgument, ArgumentIterator lastArgument) :
     ShellScript{parent, firstArgument, lastArgument}
@@ -45,33 +57,33 @@ public:
     }
     else if (arguments.frequency != 0)
     {
-      const auto pair = findPllConfig(arguments.frequency);
+      const auto values = findPllConfig(arguments.frequency);
 
-      if (std::get<0>(pair) != 0 && std::get<1>(pair) != 0)
+      if (values.mul != 0 && values.div != 0)
       {
-        static const CommonClockConfig activeMainClkConfig = {CLOCK_PLL};
-        static const CommonClockConfig temporaryMainClkConfig = {CLOCK_INTERNAL};
+        static const GenericClockConfig activeMainClockConfig = {CLOCK_PLL};
+        static const GenericClockConfig temporaryMainClockConfig = {CLOCK_INTERNAL};
         const PllConfig updatedPllConfig = {
             CLOCK_EXTERNAL,                           // source
-            static_cast<uint16_t>(std::get<1>(pair)), // divisor
-            static_cast<uint16_t>(std::get<0>(pair))  // multiplier
+            static_cast<uint16_t>(values.div), // divisor
+            static_cast<uint16_t>(values.mul)  // multiplier
         };
 
-        clockEnable(MainClock, &temporaryMainClkConfig);
+        clockEnable(MainClock, &temporaryMainClockConfig);
         while (!clockReady(MainClock));
 
         clockDisable(SystemPll);
         clockEnable(SystemPll, &updatedPllConfig);
         while (!clockReady(SystemPll));
 
-        clockEnable(MainClock, &activeMainClkConfig);
+        clockEnable(MainClock, &activeMainClockConfig);
         while (!clockReady(MainClock));
 
         // Update timer frequencies and baud rates of all interfaces
         pmChangeState(PM_ACTIVE);
 
-        tty() << "multiplier: " << std::get<0>(pair) << Terminal::EOL;
-        tty() << "divisor:    " << std::get<1>(pair) << Terminal::EOL;
+        tty() << "multiplier: " << values.mul << Terminal::EOL;
+        tty() << "divisor:    " << values.div << Terminal::EOL;
 
         return E_OK;
       }
@@ -126,19 +138,20 @@ private:
     // Multiplier values: 6..512
     // CCO range: from 275 MHz to 550 MHz
 
-    static constexpr unsigned long CCO_MIN = 275000000UL, CCO_MAX = 550000000UL;
+    static constexpr unsigned long CCO_MIN = 275000000UL;
+    static constexpr unsigned long CCO_MAX = 550000000UL;
 
-    const auto lowerMul = std::max(6UL, (CCO_MIN + INPUT_FREQUENCY - 1) / INPUT_FREQUENCY);
-    const auto upperMul = std::min(512UL, CCO_MAX / INPUT_FREQUENCY);
+    const unsigned int lowerMul = std::max(6UL, (CCO_MIN + INPUT_FREQUENCY - 1) / INPUT_FREQUENCY);
+    const unsigned int upperMul = std::min(512UL, CCO_MAX / INPUT_FREQUENCY);
 
     unsigned long frequencyError = std::numeric_limits<unsigned long>::max();
-    unsigned long div = 0, mul = 0;
+    PllValues result{};
 
     for (auto m = lowerMul; m <= upperMul; ++m)
     {
       const auto ccoFrequency = m * INPUT_FREQUENCY;
-      const auto lowerDiv = std::max(1UL, ccoFrequency / frequency);
-      const auto upperDiv = std::min(32UL, (ccoFrequency + frequency - 1) / frequency);
+      const unsigned int lowerDiv = std::max(1UL, ccoFrequency / frequency);
+      const unsigned int upperDiv = std::min(32UL, (ccoFrequency + frequency - 1) / frequency);
 
       for (auto d = lowerDiv; d <= upperDiv; ++d)
       {
@@ -148,13 +161,13 @@ private:
         if (currentError < frequencyError)
         {
           frequencyError = currentError;
-          div = d;
-          mul = m;
+          result.div = d;
+          result.mul = m;
         }
       }
     }
 
-    return std::make_tuple(mul, div);
+    return result;
   }
 };
 

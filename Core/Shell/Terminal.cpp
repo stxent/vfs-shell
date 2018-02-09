@@ -49,40 +49,20 @@ Terminal &operator<<(Terminal &output, unsigned long long value)
 
 Terminal &operator<<(Terminal &output, const char *buffer)
 {
-  const char *position = buffer;
-  size_t bytesLeft = strlen(buffer);
-
-  while (bytesLeft)
-  {
-    const size_t bytesWritten = output.write(position, bytesLeft);
-    bytesLeft -= bytesWritten;
-    position += bytesWritten;
-  }
-
+  output.write(buffer, strlen(buffer));
   return output;
 }
 
 Terminal &operator<<(Terminal &output, char buffer)
 {
-  while (output.write(&buffer, 1) == 0);
+  output.write(&buffer, sizeof(buffer));
   return output;
 }
 
 Terminal &operator<<(Terminal &output, Terminal::Control value)
 {
   if (value == Terminal::Control::EOL)
-  {
-    const char *position = "\r\n";
-    size_t bytesLeft = 2;
-
-    while (bytesLeft)
-    {
-      const size_t bytesWritten = output.write(position, bytesLeft);
-      bytesLeft -= bytesWritten;
-      position += bytesWritten;
-    }
-  }
-
+    output.write("\r\n", 2);
   return output;
 }
 

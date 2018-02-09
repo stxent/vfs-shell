@@ -16,6 +16,7 @@
 #include <halm/pm.h>
 
 #include "Shell/Initializer.hpp"
+#include "Shell/Interfaces/InterfaceNode.hpp"
 #include "Shell/MockTimeProvider.hpp"
 #include "Shell/Scripts/ChangeDirectoryScript.hpp"
 #include "Shell/Scripts/ChecksumCrc32Script.hpp"
@@ -51,7 +52,7 @@ static void enableClock()
 {
   static const ExternalOscConfig extOscConfig = {12000000, false};
   static const PllConfig sysPllConfig = {CLOCK_EXTERNAL, 3, 25};
-  static const CommonClockConfig mainClkConfig = {CLOCK_PLL};
+  static const GenericClockConfig mainClockConfig = {CLOCK_PLL};
 
   clockEnable(ExternalOsc, &extOscConfig);
   while (!clockReady(ExternalOsc));
@@ -59,7 +60,7 @@ static void enableClock()
   clockEnable(SystemPll, &sysPllConfig);
   while (!clockReady(SystemPll));
 
-  clockEnable(MainClock, &mainClkConfig);
+  clockEnable(MainClock, &mainClockConfig);
   while (!clockReady(MainClock));
 }
 
@@ -144,13 +145,44 @@ private:
 
   void bootstrap()
   {
-    VfsNode * const binEntry = new VfsDirectory{"bin", MockTimeProvider::instance().getTime()};
-    const FsFieldDescriptor binEntryFields[] = {
-        {&binEntry, sizeof(binEntry), static_cast<FsFieldType>(VfsNode::VFS_NODE_OBJECT)}
+    FsNode *parent;
+
+    // Root nodes
+    VfsNode *rootEntries[] = {
+        new VfsDirectory{"bin", RealTimeClock::instance().getTime()},
+        new VfsDirectory{"dev", RealTimeClock::instance().getTime()}
     };
-    FsNode * const rootEntryNode = static_cast<FsNode *>(fsHandleRoot(m_filesystem.get()));
-    fsNodeCreate(rootEntryNode, binEntryFields, ARRAY_SIZE(binEntryFields));
-    fsNodeFree(rootEntryNode);
+
+    parent = static_cast<FsNode *>(fsHandleRoot(m_filesystem.get()));
+    for (auto iter = std::begin(rootEntries); iter != std::end(rootEntries); ++iter)
+    {
+      const FsFieldDescriptor entryFields[] = {
+          {&*iter, sizeof(*iter), static_cast<FsFieldType>(VfsNode::VFS_NODE_OBJECT)}
+      };
+      fsNodeCreate(parent, entryFields, ARRAY_SIZE(entryFields));
+    }
+    fsNodeFree(parent);
+
+    // Device nodes
+    VfsNode *deviceEntries[] = {
+        new InterfaceNode<
+            ParamDesc<IfParameter, uint32_t, IF_RATE>
+        >("sdio", m_sdio.get(), RealTimeClock::instance().getTime()),
+        new InterfaceNode<
+            ParamDesc<SerialParameter, uint8_t, IF_SERIAL_PARITY>,
+            ParamDesc<IfParameter, uint32_t, IF_RATE>
+        >("serial", m_serial.get(), RealTimeClock::instance().getTime())
+    };
+
+    parent = ShellHelpers::openNode(m_filesystem.get(), "/dev");
+    for (auto iter = std::begin(deviceEntries); iter != std::end(deviceEntries); ++iter)
+    {
+      const FsFieldDescriptor entryFields[] = {
+          {&*iter, sizeof(*iter), static_cast<FsFieldType>(VfsNode::VFS_NODE_OBJECT)}
+      };
+      fsNodeCreate(parent, entryFields, ARRAY_SIZE(entryFields));
+    }
+    fsNodeFree(parent);
   }
 
   static Interface *makeSdioInterface(Interface *spi, Timer *timer, PinNumber cs)
@@ -174,18 +206,18 @@ const GpTimerConfig Application::s_sdioTimerConfig = {
 };
 
 const SerialConfig Application::s_serialConfig = {
-    115200,           // rate
-    128,              // rxLength
-    4096,             // txLength
-    UART_PARITY_NONE, // parity
-    PIN(4, 29),       // rx
-    PIN(4, 28),       // tx
-    0,                // priority
-    3                 // channel
+    115200,             // rate
+    128,                // rxLength
+    4096,               // txLength
+    SERIAL_PARITY_NONE, // parity
+    PIN(4, 29),         // rx
+    PIN(4, 28),         // tx
+    0,                  // priority
+    3                   // channel
 };
 
 const SpiDmaConfig Application::s_spiConfig = {
-    12000000,   // rate
+    25000000,   // rate
     PIN(0, 17), // miso
     PIN(0, 18), // mosi
     PIN(0, 15), // sck

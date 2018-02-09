@@ -10,32 +10,22 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
+#include <limits>
 #include <type_traits>
+#include "Shell/TerminalHelpers.hpp"
 
 class Script;
 
 class Terminal
 {
 public:
+  using Format = TerminalHelpers::Format;
+  using Fill = TerminalHelpers::Fill;
+  using Width = TerminalHelpers::Width;
+
   enum Control
   {
     EOL
-  };
-
-  enum class Format
-  {
-    DEC,
-    HEX
-  };
-
-  struct Fill
-  {
-    char value;
-  };
-
-  struct Width
-  {
-    size_t value;
   };
 
   virtual ~Terminal() = default;
@@ -102,102 +92,12 @@ private:
     m_width = value;
   }
 
-  static void invert(char *first, char *last)
-  {
-    while (first < last)
-    {
-      const char tmp = *first;
-      *first = *last;
-      *last = tmp;
-
-      first++;
-      last--;
-    }
-  }
-
-  static void prepend(char *first, size_t length, size_t width, char fill)
-  {
-    if (length < width)
-    {
-      size_t offset = width - length;
-      ++length;
-
-      while (length--)
-        first[length + offset] = first[length];
-      while (offset--)
-        first[offset] = fill;
-    }
-  }
-
-  template<class T>
-  static void uint2dec(char *buffer, T value, size_t width, char fill)
-  {
-    char *output = buffer;
-
-    do
-    {
-      const unsigned int remainder = static_cast<unsigned int>(value % 10);
-      *output++ = remainder + '0';
-      value /= 10;
-    }
-    while (value);
-
-    *output = '\0';
-    invert(buffer, output - 1);
-    prepend(buffer, output - buffer, width, fill);
-  }
-
-  template<class T>
-  static typename std::enable_if<std::is_signed<T>::value>::type int2dec(char *buffer, T value, size_t width,
-      char fill)
-  {
-    char * const output = value < 0 ? buffer + 1 : buffer;
-
-    uint2dec<T>(output, abs(value), width, fill);
-    if (value < 0)
-      *buffer = '-';
-  }
-
-  template<class T>
-  static typename std::enable_if<std::is_unsigned<T>::value>::type int2dec(char *buffer, T value, size_t width,
-      char fill)
-  {
-    uint2dec<T>(buffer, value, width, fill);
-  }
-
-  template<class T>
-  static void int2hex(char *buffer, T value, size_t width, char fill)
-  {
-    char *output = buffer;
-
-    do
-    {
-      const uint8_t part = static_cast<uint8_t>(value) & 0x0F;
-      *output++ = part < 10 ? part + '0' : part - 10 + 'A';
-      value >>= 4;
-    }
-    while (value);
-
-    *output = '\0';
-    invert(buffer, output - 1);
-    prepend(buffer, output - buffer, width, fill);
-  }
-
-  template<class T>
-  static void int2str(char *buffer, T value, Width width, Format format, Fill fill)
-  {
-    if (format == Format::HEX)
-      int2hex(buffer, value, width.value, fill.value);
-    else
-      int2dec(buffer, value, width.value, fill.value);
-  }
-
-  template<class T>
+  template<typename T>
   static Terminal &serialize(Terminal &output, T value)
   {
-    char buffer[24];
+    char buffer[TerminalHelpers::serializedValueLength<T>()];
 
-    Terminal::int2str(buffer, value, output.m_width, output.m_format, output.m_fill);
+    TerminalHelpers::int2str(buffer, value, output.m_width, output.m_format, output.m_fill);
     output.write(buffer, strlen(buffer));
     return output;
   }

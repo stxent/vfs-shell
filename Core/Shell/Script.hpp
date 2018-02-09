@@ -70,14 +70,14 @@ public:
   virtual Result run(Script *parent, Script::ArgumentIterator, Script::ArgumentIterator) const = 0;
 };
 
-template<typename T, typename... ARGS>
+template<typename T, typename... ARGs>
 class ScriptRunner: public ScriptRunnerBase
 {
 private:
-  using Indices = std::make_index_sequence<sizeof...(ARGS)>;
+  using Indices = std::make_index_sequence<sizeof...(ARGs)>;
 
 public:
-  ScriptRunner(ARGS... args) :
+  ScriptRunner(ARGs... args) :
     m_args{std::make_tuple(args...)}
   {
   }
@@ -101,7 +101,7 @@ private:
     return T{parent, firstArgument, lastArgument, std::get<N>(m_args)...}.run();
   }
 
-  const std::tuple<ARGS...> m_args;
+  const std::tuple<ARGs...> m_args;
 };
 
 #endif // VFS_SHELL_CORE_SHELL_SCRIPT_HPP_
