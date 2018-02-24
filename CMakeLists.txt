@@ -26,6 +26,7 @@ endif()
 include_directories(SYSTEM
         "Libs/xcore/include"
         "Libs/halm/include"
+        "Libs/dpm/include"
         "Libs/osw/include"
         "Libs/yaf/include"
 )
@@ -47,5 +48,5 @@ include("Libs/CMakeLists.txt")
 
 # Configure executable
 add_executable(${PROJECT_NAME} ${CORE_SOURCES} ${PLATFORM_SOURCES})
-add_dependencies(${PROJECT_NAME} yaf osw halm xcore)
+add_dependencies(${PROJECT_NAME} yaf osw dpm halm xcore)
 target_link_libraries(${PROJECT_NAME} ${PLATFORM_LIBS})

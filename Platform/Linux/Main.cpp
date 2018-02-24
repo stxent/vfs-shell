@@ -11,8 +11,8 @@
 #include <iostream>
 #include <ev.h>
 
-#include <halm/platform/linux/console.h>
-#include <halm/platform/linux/udp.h>
+#include <halm/platform/generic/console.h>
+#include <halm/platform/generic/udp.h>
 #include <osw/thread.h>
 #include "Shell/Initializer.hpp"
 #include "Shell/Scripts/ChangeDirectoryScript.hpp"

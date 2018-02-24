@@ -10,7 +10,7 @@ const GpTimerConfig RealTimeClock::s_monotonicTimerConfig = {
     1000000,            // frequency
     GPTIMER_MATCH_AUTO, // event
     0,                  // priority
-    0                   // channel
+    3                   // channel
 };
 
 const RtcConfig RealTimeClock::s_realtimeClockConfig = {

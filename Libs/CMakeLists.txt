@@ -36,6 +36,17 @@ ExternalProject_Add(halm
         BUILD_ALWAYS 1
 )
 
+ExternalProject_Add(dpm
+        SOURCE_DIR ${PROJECT_SOURCE_DIR}/Libs/dpm
+        CMAKE_COMMAND ${CMAKE_COMMAND}
+        CMAKE_ARGS
+                ${FLAGS_SUBPROJECT}
+                ${FLAGS_SUBPROJECT_HALM}
+        BINARY_DIR ${CMAKE_BINARY_DIR}/dpm
+        INSTALL_COMMAND ""
+        BUILD_ALWAYS 1
+)
+
 ExternalProject_Add(osw
         SOURCE_DIR ${PROJECT_SOURCE_DIR}/Libs/osw
         CMAKE_COMMAND ${CMAKE_COMMAND}
@@ -59,6 +70,7 @@ ExternalProject_Add(yaf
 set(PLATFORM_LIBS
         "${CMAKE_BINARY_DIR}/yaf/libyaf.a"
         "${CMAKE_BINARY_DIR}/osw/libosw.a"
+        "${CMAKE_BINARY_DIR}/dpm/libdpm.a"
         "${CMAKE_BINARY_DIR}/halm/libhalm.a"
         "${CMAKE_BINARY_DIR}/xcore/libxcore.a"
         ${PLATFORM_LIBS}

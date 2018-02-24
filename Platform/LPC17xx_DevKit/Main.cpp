@@ -14,6 +14,9 @@
 #include <halm/platform/nxp/serial.h>
 #include <halm/platform/nxp/spi_dma.h>
 #include <halm/pm.h>
+#include <dpm/drivers/displays/display.h>
+#include <dpm/drivers/displays/s6d1121.h>
+#include <dpm/drivers/platform/nxp/memory_bus_dma.h>
 
 #include "Shell/Initializer.hpp"
 #include "Shell/Interfaces/InterfaceNode.hpp"
@@ -67,11 +70,17 @@ static void enableClock()
 class Application
 {
 private:
-  static constexpr PinNumber LED_B       = PIN(1, 8);
-  static constexpr PinNumber LED_G       = PIN(1, 9);
-  static constexpr PinNumber LED_R       = PIN(1, 10);
-  static constexpr PinNumber SDIO_CS_PIN = PIN(0, 22);
+  static constexpr PinNumber DISPLAY_CS     = PIN(2, 8);
+  static constexpr PinNumber DISPLAY_RESET  = PIN(1, 4);
+  static constexpr PinNumber DISPLAY_RS     = PIN(1, 14);
 
+  static constexpr PinNumber LED_B          = PIN(1, 8);
+  static constexpr PinNumber LED_G          = PIN(1, 9);
+  static constexpr PinNumber LED_R          = PIN(1, 10);
+  static constexpr PinNumber SDIO_CS_PIN    = PIN(0, 22);
+
+  static const MemoryBusDmaConfig s_displayBusConfig;
+  static const PinNumber s_displayBusPins[];
   static const GpTimerConfig s_sdioTimerConfig;
   static const SerialConfig s_serialConfig;
   static const SpiDmaConfig s_spiConfig;
@@ -83,6 +92,8 @@ private:
 
 public:
   Application() :
+    m_displayBus{static_cast<Interface *>(init(MemoryBusDma, &s_displayBusConfig)), interfaceDeleter},
+    m_display{makeDisplayInterface(m_displayBus.get()), interfaceDeleter},
     m_serial{static_cast<Interface *>(init(Serial, &s_serialConfig)), interfaceDeleter},
     m_spi{static_cast<Interface *>(init(SpiDma, &s_spiConfig)), interfaceDeleter},
     m_sdioTimer{static_cast<Timer *>(init(GpTimer, &s_sdioTimerConfig)), [](Timer *pointer){ deinit(pointer); }},
@@ -132,8 +143,10 @@ public:
   }
 
 private:
-  static constexpr size_t BUFFER_SIZE = 4096;
+  static constexpr size_t BUFFER_SIZE = 2048;
 
+  std::unique_ptr<Interface, std::function<void (Interface *)>> m_displayBus;
+  std::unique_ptr<Interface, std::function<void (Interface *)>> m_display;
   std::unique_ptr<Interface, std::function<void (Interface *)>> m_serial;
   std::unique_ptr<Interface, std::function<void (Interface *)>> m_spi;
   std::unique_ptr<Timer, std::function<void (Timer *)>> m_sdioTimer;
@@ -166,11 +179,16 @@ private:
     // Device nodes
     VfsNode *deviceEntries[] = {
         new InterfaceNode<
-            ParamDesc<IfParameter, uint32_t, IF_RATE>
+            ParamDesc<IfDisplayParameter, IF_DISPLAY_ORIENTATION, uint8_t>,
+            ParamDesc<IfDisplayParameter, IF_DISPLAY_RESOLUTION, DisplayResolution, uint16_t, uint16_t>,
+            ParamDesc<IfDisplayParameter, IF_DISPLAY_WINDOW, DisplayWindow, uint16_t, uint16_t, uint16_t, uint16_t>
+        >("display", m_display.get(), RealTimeClock::instance().getTime()),
+        new InterfaceNode<
+            ParamDesc<IfParameter, IF_RATE, uint32_t>
         >("sdio", m_sdio.get(), RealTimeClock::instance().getTime()),
         new InterfaceNode<
-            ParamDesc<SerialParameter, uint8_t, IF_SERIAL_PARITY>,
-            ParamDesc<IfParameter, uint32_t, IF_RATE>
+            ParamDesc<SerialParameter, IF_SERIAL_PARITY, uint8_t>,
+            ParamDesc<IfParameter, IF_RATE, uint32_t>
         >("serial", m_serial.get(), RealTimeClock::instance().getTime())
     };
 
@@ -183,6 +201,17 @@ private:
       fsNodeCreate(parent, entryFields, ARRAY_SIZE(entryFields));
     }
     fsNodeFree(parent);
+  }
+
+  static Interface *makeDisplayInterface(Interface *bus)
+  {
+    const S6D1121Config config = {
+        bus,            // bus
+        DISPLAY_CS,     // cs
+        DISPLAY_RESET,  // reset
+        DISPLAY_RS      // rs
+    };
+    return static_cast<Interface *>(init(S6D1121, &config));
   }
 
   static Interface *makeSdioInterface(Interface *spi, Timer *timer, PinNumber cs)
@@ -198,11 +227,42 @@ private:
   }
 };
 
+const MemoryBusDmaConfig Application::s_displayBusConfig = {
+    80,               // cycle
+    s_displayBusPins, // pins
+    0,                // priority
+
+    // clock
+    {
+        PIN(1, 22), // leading
+        PIN(1, 25), // trailing
+        1,          // channel
+        0,          // dma
+        true        // inversion
+    },
+
+    // control
+    {
+        PIN(1, 26), // capture
+        PIN(1, 28), // leading
+        PIN(1, 29), // trailing
+        0,          // channel
+        1,          // dma
+        false       // inversion
+    }
+};
+
+const PinNumber Application::s_displayBusPins[] = {
+    PIN(2, 0), PIN(2, 1), PIN(2, 2), PIN(2, 3),
+    PIN(2, 4), PIN(2, 5), PIN(2, 6), PIN(2, 7),
+    0
+};
+
 const GpTimerConfig Application::s_sdioTimerConfig = {
     100000,             // frequency
     GPTIMER_MATCH_AUTO, // event
     0,                  // priority
-    1                   // channel
+    2                   // channel
 };
 
 const SerialConfig Application::s_serialConfig = {
@@ -223,7 +283,7 @@ const SpiDmaConfig Application::s_spiConfig = {
     PIN(0, 15), // sck
     0,          // channel
     3,          // mode
-    {0, 1}      // dma
+    {2, 3}      // dma
 };
 
 int main()

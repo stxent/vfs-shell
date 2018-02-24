@@ -10,3 +10,6 @@
 [submodule "Libs/yaf"]
 	path = Libs/yaf
 	url = https://github.com/stxent/yaf.git
+[submodule "Libs/dpm"]
+	path = Libs/dpm
+	url = https://github.com/stxent/dpm.git
