@@ -74,7 +74,7 @@ private:
 
   Result m_result;
 
-  void removeNode(const char *positionalArgument, bool /*recursive*/)
+  void removeNode(const char *positionalArgument, bool recursive)
   {
     if (m_result != E_OK)
       return;
@@ -85,7 +85,8 @@ private:
     FsNode * const node = ShellHelpers::openNode(fs(), absolutePath);
     if (node != nullptr)
     {
-      if (fsNodeLength(node, FS_NODE_DATA, nullptr) == E_OK)
+      // TODO Remove directories recursively
+      if (recursive || fsNodeLength(node, FS_NODE_DATA, nullptr) == E_OK)
       {
         FsNode * const root = ShellHelpers::openBaseNode(fs(), absolutePath);
         if (root != nullptr)

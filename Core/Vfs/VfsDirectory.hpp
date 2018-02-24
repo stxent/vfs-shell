@@ -23,7 +23,7 @@ public:
   virtual Result create(const FsFieldDescriptor *, size_t) override;
   virtual VfsNode *fetch(VfsNode *current) override;
   virtual void *head() override;
-  virtual Result remove(VfsNode *) override;
+  virtual Result remove(FsNode *) override;
 
 private:
   // List of descendant nodes

@@ -132,8 +132,10 @@ VfsNode *VfsDirectory::fetch(VfsNode *current)
     return nullptr;
 }
 
-Result VfsDirectory::remove(VfsNode *node)
+Result VfsDirectory::remove(FsNode *proxy)
 {
+  VfsNode * const node = reinterpret_cast<VfsNodeProxy *>(proxy)->get();
+
   VfsHandle::Locker locker(*m_handle);
   auto iter = std::find(m_nodes.begin(), m_nodes.end(), node);
 

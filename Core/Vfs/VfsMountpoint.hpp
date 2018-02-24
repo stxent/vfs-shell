@@ -50,7 +50,7 @@ public:
       return nullptr;
   }
 
-  virtual Result remove(VfsNode *node) override
+  virtual Result remove(FsNode *node) override
   {
     FsNode * const rootNode = static_cast<FsNode *>(fsHandleRoot(m_targetHandle.get()));
 

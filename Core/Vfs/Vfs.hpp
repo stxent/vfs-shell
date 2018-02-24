@@ -44,7 +44,6 @@ public:
   }
 
   VfsNode(VfsNode &&) = default;
-
   virtual ~VfsNode() = default;
 
   virtual Result create(const FsFieldDescriptor *, size_t)
@@ -166,7 +165,7 @@ public:
     return E_OK;
   }
 
-  virtual Result remove(VfsNode *)
+  virtual Result remove(FsNode *)
   {
     return E_INVALID;
   }
@@ -275,13 +274,18 @@ public:
 
   static Result remove(void *object, void *node)
   {
-    return static_cast<VfsNodeProxy *>(object)->removeImpl(static_cast<VfsNodeProxy *>(node)->m_node);
+    return static_cast<VfsNodeProxy *>(object)->removeImpl(node);
   }
 
   static Result write(void *object, FsFieldType type, FsLength position, const void *buffer, size_t bufferLength,
       size_t *bytesWritten)
   {
     return static_cast<VfsNodeProxy *>(object)->writeImpl(type, position, buffer, bufferLength, bytesWritten);
+  }
+
+  VfsNode *get()
+  {
+    return m_node;
   }
 
 protected:
@@ -330,7 +334,7 @@ protected:
 
   Result removeImpl(void *node)
   {
-    return m_node->remove(static_cast<VfsNode *>(node));
+    return m_node->remove(static_cast<FsNode *>(node));
   }
 
   Result writeImpl(FsFieldType type, FsLength position, const void *buffer, size_t bufferLength,
