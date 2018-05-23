@@ -22,6 +22,9 @@ Result VfsDirectory::create(const FsFieldDescriptor *descriptors, size_t number)
   {
     const FsFieldDescriptor * const desc = descriptors + index;
 
+    if (desc->data == nullptr)
+      return E_VALUE;
+
     switch (desc->type)
     {
       case FS_NODE_ACCESS:
@@ -66,7 +69,7 @@ Result VfsDirectory::create(const FsFieldDescriptor *descriptors, size_t number)
     switch (static_cast<enum VfsFieldType>(desc->type))
     {
       case VFS_NODE_OBJECT:
-        if (desc->data != nullptr && desc->length == sizeof(VfsNode *))
+        if (desc->length == sizeof(VfsNode *))
         {
           node = *static_cast<VfsNode * const *>(desc->data);
           break;
@@ -103,15 +106,10 @@ Result VfsDirectory::create(const FsFieldDescriptor *descriptors, size_t number)
     }
   }
 
-  if (node != nullptr)
-  {
-    VfsHandle::Locker locker(*m_handle);
-    node->enter(m_handle, this);
-    m_nodes.push_back(node);
-    return E_OK;
-  }
-  else
-    return E_VALUE;
+  VfsHandle::Locker locker(*m_handle);
+  node->enter(m_handle, this);
+  m_nodes.push_back(node);
+  return E_OK;
 }
 
 void *VfsDirectory::head()

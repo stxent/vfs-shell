@@ -223,11 +223,8 @@ FsNode *ShellHelpers::openSink(FsHandle *fs, Environment &env, TimeProvider &tim
     FsNode *root = nullptr;
 
     // Open directory
-    if (res == E_OK)
-    {
-      if ((root = ShellHelpers::openBaseNode(fs, absolutePath)) == nullptr)
-        res = E_ENTRY;
-    }
+    if ((root = ShellHelpers::openBaseNode(fs, absolutePath)) == nullptr)
+      res = E_ENTRY;
 
     // Create new node
     if (res == E_OK)

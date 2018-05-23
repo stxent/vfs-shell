@@ -92,9 +92,9 @@ public:
     return E_OK;
   }
 
-  virtual VfsNode *next(VfsNode *current)
+  virtual VfsNode *next()
   {
-    return m_parent != nullptr ? m_parent->fetch(current) : nullptr;
+    return m_parent != nullptr ? m_parent->fetch(this) : nullptr;
   }
 
   virtual Result read(FsFieldType type, FsLength position, void *buffer, size_t bufferLength, size_t *bytesRead)
@@ -316,7 +316,7 @@ protected:
 
   Result nextImpl()
   {
-    VfsNode * const nextNode = m_node->next(m_node);
+    VfsNode * const nextNode = m_node->next();
 
     if (nextNode != nullptr)
     {
