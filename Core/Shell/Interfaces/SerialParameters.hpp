@@ -20,6 +20,10 @@ static constexpr const char *ifParamToName()
       return "cts";
     case IF_SERIAL_RTS:
       return "rts";
+    case IF_SERIAL_DSR:
+      return "dsr";
+    case IF_SERIAL_DTR:
+      return "dtr";
     default:
       return "undefined";
   }

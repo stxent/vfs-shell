@@ -44,11 +44,11 @@ class Application
 public:
   Application(Interface *serial, bool echoing) :
       m_serial{serial, [](Interface *pointer){ deinit(pointer); raise(SIGUSR1); }},
-      m_handle{static_cast<FsHandle *>(init(VfsHandleClass, nullptr)), [](FsHandle *pointer){ deinit(pointer); }},
+      m_filesystem{static_cast<FsHandle *>(init(VfsHandleClass, nullptr)), [](FsHandle *pointer){ deinit(pointer); }},
       m_terminal{m_serial.get()},
-      m_initializer{m_handle.get(), m_terminal, UnixTimeProvider::instance(), echoing}
+      m_initializer{m_filesystem.get(), m_terminal, UnixTimeProvider::instance(), echoing}
   {
-    if (m_serial == nullptr || m_handle == nullptr)
+    if (m_serial == nullptr || m_filesystem == nullptr)
       abort(); // TODO Rewrite
   }
 
@@ -93,19 +93,29 @@ private:
   static constexpr size_t BUFFER_SIZE = 4096;
 
   std::unique_ptr<Interface, std::function<void (Interface *)>> m_serial;
-  std::unique_ptr<FsHandle, std::function<void (FsHandle *)>> m_handle;
+  std::unique_ptr<FsHandle, std::function<void (FsHandle *)>> m_filesystem;
   SerialTerminal m_terminal;
   Initializer m_initializer;
 
   void bootstrap()
   {
-    VfsNode * const binEntry = new VfsDirectory{"bin", UnixTimeProvider::instance().getTime()};
-    const FsFieldDescriptor binEntryFields[] = {
-        {&binEntry, sizeof(binEntry), static_cast<FsFieldType>(VfsNode::VFS_NODE_OBJECT)}
+    FsNode *parent;
+
+    // Root nodes
+    VfsNode *rootEntries[] = {
+        new VfsDirectory{"bin", UnixTimeProvider::instance().getTime()},
+        new VfsDirectory{"dev", UnixTimeProvider::instance().getTime()}
     };
-    FsNode * const rootEntryNode = static_cast<FsNode *>(fsHandleRoot(m_handle.get()));
-    fsNodeCreate(rootEntryNode, binEntryFields, ARRAY_SIZE(binEntryFields));
-    fsNodeFree(rootEntryNode);
+
+    parent = static_cast<FsNode *>(fsHandleRoot(m_filesystem.get()));
+    for (auto iter = std::begin(rootEntries); iter != std::end(rootEntries); ++iter)
+    {
+      const FsFieldDescriptor entryFields[] = {
+          {&*iter, sizeof(*iter), static_cast<FsFieldType>(VfsNode::VFS_NODE_OBJECT)}
+      };
+      fsNodeCreate(parent, entryFields, ARRAY_SIZE(entryFields));
+    }
+    fsNodeFree(parent);
   }
 
   static Interface *makeUdpInterface(const char *ip, uint16_t in, uint16_t out)
