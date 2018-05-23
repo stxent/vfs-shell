@@ -19,7 +19,7 @@ public:
 
   virtual Result run() override
   {
-    env().iterate(std::bind(&ListEnvScript::printEnvInfo, this, std::placeholders::_1, std::placeholders::_2));
+    env().iterate([this](const char *key, const char *value){ printEnvInfo(key, value); });
     return E_OK;
   }
 

@@ -56,7 +56,7 @@ Result ListNodesScript::run()
     if (m_arguments.nodeCount)
     {
       ArgParser::invoke(m_firstArgument, m_lastArgument, descriptors().cbegin(), descriptors().cend(),
-          std::bind(&ListNodesScript::printDirectoryContent, this, std::placeholders::_1));
+          [this](const char *key){ printDirectoryContent(key); });
     }
     else
     {

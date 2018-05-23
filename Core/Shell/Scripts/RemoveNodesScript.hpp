@@ -39,7 +39,7 @@ public:
     else
     {
       ArgParser::invoke(m_firstArgument, m_lastArgument, std::cbegin(descriptors), std::cend(descriptors),
-          std::bind(&RemoveNodesScript::removeNode, this, std::placeholders::_1, arguments.recursive));
+          [this, &arguments](const char *key){ removeNode(key, arguments.recursive); });
       return m_result;
     }
   }
