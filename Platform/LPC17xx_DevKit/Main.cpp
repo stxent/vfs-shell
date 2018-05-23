@@ -9,6 +9,7 @@
 #include <halm/core/cortex/nvic.h>
 #include <halm/generic/sdio_spi.h>
 #include <halm/pin.h>
+#include <halm/platform/nxp/bod.h>
 #include <halm/platform/nxp/gptimer.h>
 #include <halm/platform/nxp/lpc17xx/clocking.h>
 #include <halm/platform/nxp/serial.h>
@@ -79,6 +80,7 @@ private:
   static constexpr PinNumber LED_R          = PIN(1, 10);
   static constexpr PinNumber SDIO_CS_PIN    = PIN(0, 22);
 
+  static const BodConfig s_bodConfig;
   static const MemoryBusDmaConfig s_displayBusConfig;
   static const PinNumber s_displayBusPins[];
   static const GpTimerConfig s_sdioTimerConfig;
@@ -92,6 +94,7 @@ private:
 
 public:
   Application() :
+    m_bod{static_cast<Interrupt *>(init(Bod, &s_bodConfig)), [](Interrupt *pointer){ deinit(pointer); }},
     m_displayBus{static_cast<Interface *>(init(MemoryBusDma, &s_displayBusConfig)), interfaceDeleter},
     m_display{makeDisplayInterface(m_displayBus.get()), interfaceDeleter},
     m_serial{static_cast<Interface *>(init(Serial, &s_serialConfig)), interfaceDeleter},
@@ -145,6 +148,7 @@ public:
 private:
   static constexpr size_t BUFFER_SIZE = 2048;
 
+  std::unique_ptr<Interrupt, std::function<void (Interrupt *)>> m_bod;
   std::unique_ptr<Interface, std::function<void (Interface *)>> m_displayBus;
   std::unique_ptr<Interface, std::function<void (Interface *)>> m_display;
   std::unique_ptr<Interface, std::function<void (Interface *)>> m_serial;
@@ -225,6 +229,12 @@ private:
     const InterfaceWrapper::Config config{interface, rx, tx};
     return static_cast<Interface *>(init(InterfaceWrapper, &config));
   }
+};
+
+const BodConfig Application::s_bodConfig = {
+    BOD_EVENT_2V2,      // eventLevel
+    BOD_RESET_DISABLED, // resetLevel
+    0                   // priority
 };
 
 const MemoryBusDmaConfig Application::s_displayBusConfig = {
