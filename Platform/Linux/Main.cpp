@@ -9,7 +9,7 @@
 #include <cstring>
 #include <fstream>
 #include <iostream>
-#include <ev.h>
+#include <uv.h>
 
 #include <halm/platform/generic/console.h>
 #include <halm/platform/generic/udp.h>
@@ -132,9 +132,9 @@ void applicationWrapper(void *argument)
   delete application;
 }
 
-static void userSignalCallback(EV_P_ ev_signal *, int)
+static void userSignalCallback(uv_signal_t *, int)
 {
-  ev_break(EV_A_ EVBREAK_ALL);
+  uv_stop(uv_default_loop());
 }
 
 int main(int argc, char *argv[])
@@ -158,18 +158,18 @@ int main(int argc, char *argv[])
   }
   else
   {
-    struct ev_loop * const loop = ev_default_loop(0);
-    ev_signal watcher;
+    const auto loop = uv_default_loop();
+    uv_signal_t listener;
 
-    ev_signal_init(&watcher, userSignalCallback, SIGUSR1);
-    ev_signal_start(loop, &watcher);
+    uv_signal_init(loop, &listener);
+    uv_signal_start(&listener, userSignalCallback, SIGUSR1);
 
     Application * const application = new Application();
     Thread appThread;
     threadInit(&appThread, 4096, 0, applicationWrapper, application);
     threadStart(&appThread);
 
-    ev_loop(loop, 0);
+    uv_run(uv_default_loop(), UV_RUN_DEFAULT);
     return EXIT_SUCCESS;
   }
 }

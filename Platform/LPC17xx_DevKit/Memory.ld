@@ -8,11 +8,15 @@ EXTERN(vectorTable)
 
 MEMORY
 {
-  FLASH (rx) : ORIGIN = 0x00000000, LENGTH = 0x80000 /* 512 KiB */
-  RAM (rwx)  : ORIGIN = 0x2007C000, LENGTH = 0x08000 /* 32 KiB */
-}
+  FLASH (rx) : ORIGIN = 0x00000000, LENGTH = 0x080000 /* 512 KiB */
+  RAM (rwx)  : ORIGIN = 0x10000000, LENGTH = 0x008000 /* 32 KiB */
 
-stackStart = ORIGIN(RAM) + LENGTH(RAM);
+  GPIO (rw)  : ORIGIN = 0x2009C000, LENGTH = 0x004000 /* 16 KiB */
+  APB0 (rw)  : ORIGIN = 0x40000000, LENGTH = 0x080000 /* 512 KiB */
+  APB1 (rw)  : ORIGIN = 0x40080000, LENGTH = 0x080000 /* 512 KiB */
+  AHB (rw)   : ORIGIN = 0x50000000, LENGTH = 0x200000 /* 2 MiB */
+  PPB (rw)   : ORIGIN = 0xE0000000, LENGTH = 0x100000 /* 1 MiB */
+}
 
 SECTIONS
 {
@@ -55,10 +59,10 @@ SECTIONS
   . = ALIGN(4);
   .init_array :
   {
-  __init_array_start = .;
+    __init_array_start = .;
     KEEP (*(.init_array*))
     __init_array_end = .;
-  } >FLASH
+  } >FLASH =0xFF
 
   .data : AT(_sidata) ALIGN(4)
   {
@@ -84,6 +88,31 @@ SECTIONS
     heapStart = .;
   } >RAM
 
+  .gpio :
+  {
+    GPIO_DOMAIN = .;
+  } >GPIO
+
+  .apb0 :
+  {
+    APB0_DOMAIN = .;
+  } >APB0
+
+  .apb1 :
+  {
+    APB1_DOMAIN = .;
+  } >APB1
+
+  .ahb :
+  {
+    AHB_DOMAIN = .;
+  } >AHB
+
+  .ppb :
+  {
+    PPB_DOMAIN = .;
+  } >PPB
+
   /DISCARD/ :
   {
     *(.init)
@@ -97,5 +126,5 @@ SECTIONS
   }
 
   PROVIDE(end = heapStart);
-  PROVIDE(_stack = stackStart);
+  PROVIDE(_stack = ORIGIN(RAM) + LENGTH(RAM));
 }
