@@ -107,8 +107,8 @@ private:
     uint8_t buffer[BUFFER_SIZE];
     FsLength pos = 0;
 
-    res = read(buffer, srcNode, BUFFER_SIZE, 0, 0, std::bind(&CopyNodeScript::onDataRead, this, dstNode, &pos,
-        std::placeholders::_1, std::placeholders::_2));
+    res = read(buffer, srcNode, BUFFER_SIZE, 0, 0,
+        [this, dstNode, &pos](const void *buf, size_t len){ return onDataRead(dstNode, &pos, buf, len); });
 
     fsNodeFree(dstNode);
     fsNodeFree(srcNode);

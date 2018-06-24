@@ -23,7 +23,7 @@ public:
     static const ArgParser::Descriptor descriptors[] = {
         {"--help", nullptr, "show this help message and exit", 0, Arguments::helpSetter},
         {"-a", "STRING", "set alarm to time described by STRING", 1, Arguments::alarmSetter},
-        {"-s", "STRING", "set time described by STRING", 1, Arguments::timeSetter}
+        {"-s", "STRING", "set time described by STRING, format +\"%H:%M:%S %d.%m.%Y\"", 1, Arguments::timeSetter}
     };
 
     bool argumentsParsed;

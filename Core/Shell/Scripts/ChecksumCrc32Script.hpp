@@ -39,7 +39,7 @@ public:
     else
     {
       ArgParser::invoke(m_firstArgument, m_lastArgument, std::cbegin(descriptors), std::cend(descriptors),
-          std::bind(&ChecksumCrc32Script::computeChecksum, this, std::placeholders::_1));
+          [this](const char *key){ computeChecksum(key); });
       return m_result;
     }
   }

@@ -27,6 +27,7 @@
 #include "Shell/Scripts/CopyNodeScript.hpp"
 #include "Shell/Scripts/DateScript.hpp"
 #include "Shell/Scripts/DirectDataScript.hpp"
+#include "Shell/Scripts/DisplayTestScript.hpp"
 #include "Shell/Scripts/EchoScript.hpp"
 #include "Shell/Scripts/ExitScript.hpp"
 #include "Shell/Scripts/GetEnvScript.hpp"
@@ -124,6 +125,7 @@ public:
     m_initializer.attach<CpuFrequencyScript<12000000>>();
     m_initializer.attach<DateScript>();
     m_initializer.attach<DirectDataScript<BUFFER_SIZE>>();
+    m_initializer.attach<DisplayTestScript<BUFFER_SIZE>>();
     m_initializer.attach<EchoScript>();
     m_initializer.attach<ExitScript>();
     m_initializer.attach<GetEnvScript>();
