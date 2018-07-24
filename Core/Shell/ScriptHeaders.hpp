@@ -8,6 +8,7 @@
 #define VFS_SHELL_CORE_SHELL_SCRIPTHEADERS_HPP_
 
 #include <cstddef>
+#include <cstdint>
 
 struct ScriptHeaders
 {
@@ -18,9 +19,9 @@ struct ScriptHeaders
   static constexpr size_t MAX_HEADER_SIZE = 4;
 
   static constexpr size_t OBJECT_HEADER_SIZE = 4;
-  static const char OBJECT_HEADER[OBJECT_HEADER_SIZE];
+  static const uint8_t OBJECT_HEADER[OBJECT_HEADER_SIZE];
   static constexpr size_t SCRIPT_HEADER_SIZE = 2;
-  static const char SCRIPT_HEADER[SCRIPT_HEADER_SIZE];
+  static const uint8_t SCRIPT_HEADER[SCRIPT_HEADER_SIZE];
 };
 
 #endif // VFS_SHELL_CORE_SHELL_SCRIPTHEADERS_HPP_

@@ -64,7 +64,8 @@ public:
 
       if (fsNodeRead(node, FS_NODE_DATA, 0, header, sizeof(header), &count) == E_OK && count == sizeof(header))
       {
-        if (!memcmp(header, ScriptHeaders::OBJECT_HEADER, ScriptHeaders::OBJECT_HEADER_SIZE))
+        if (std::equal(header, header + ScriptHeaders::OBJECT_HEADER_SIZE,
+            ScriptHeaders::OBJECT_HEADER, ScriptHeaders::OBJECT_HEADER + ScriptHeaders::OBJECT_HEADER_SIZE))
         {
           ScriptRunnerBase *runner;
 
@@ -76,7 +77,7 @@ public:
         }
         else if (!memcmp(header, ScriptHeaders::SCRIPT_HEADER, ScriptHeaders::SCRIPT_HEADER_SIZE))
         {
-
+          // TODO
         }
       }
 

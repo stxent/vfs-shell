@@ -60,6 +60,8 @@ public:
     VfsNode *node;
   };
 
+  static const FsNodeClass table;
+
   VfsNodeProxy(const VfsNodeProxy &) = delete;
   VfsNodeProxy &operator=(const VfsNodeProxy &) = delete;
 

@@ -6,13 +6,12 @@
 
 #include "Vfs/VfsHandle.hpp"
 
-static const FsHandleClass vfsHandleTable = {
-    sizeof(struct VfsHandle), // size
-    VfsHandle::init,          // init
-    VfsHandle::deinit,        // deinit
+const FsHandleClass VfsHandle::table{
+    sizeof(VfsHandle), // size
+    VfsHandle::init,   // init
+    VfsHandle::deinit, // deinit
 
-    VfsHandle::root,          // root
-    VfsHandle::sync           // sync
+    VfsHandle::root,   // root
+    VfsHandle::sync    // sync
 };
-
-const FsHandleClass * const VfsHandleClass = &vfsHandleTable;
+const FsHandleClass * const VfsHandleClass = &VfsHandle::table;

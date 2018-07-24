@@ -8,22 +8,22 @@
 #include "Vfs/Vfs.hpp"
 #include "Vfs/VfsHandle.hpp"
 
-static const FsNodeClass vfsNodeProxyTable = {
-    sizeof(struct VfsNodeProxy), // size
-    VfsNodeProxy::init,          // init
-    VfsNodeProxy::deinit,        // deinit
+const FsNodeClass VfsNodeProxy::table{
+    sizeof(VfsNodeProxy), // size
+    VfsNodeProxy::init,   // init
+    VfsNodeProxy::deinit, // deinit
 
-    VfsNodeProxy::create,        // create
-    VfsNodeProxy::head,          // head
-    VfsNodeProxy::free,          // free
-    VfsNodeProxy::length,        // length
-    VfsNodeProxy::next,          // next
-    VfsNodeProxy::read,          // read
-    VfsNodeProxy::remove,        // remove
-    VfsNodeProxy::write          // write
+    VfsNodeProxy::create, // create
+    VfsNodeProxy::head,   // head
+    VfsNodeProxy::free,   // free
+    VfsNodeProxy::length, // length
+    VfsNodeProxy::next,   // next
+    VfsNodeProxy::read,   // read
+    VfsNodeProxy::remove, // remove
+    VfsNodeProxy::write   // write
 };
+const FsNodeClass * const VfsNodeProxyClass = &VfsNodeProxy::table;
 
-const FsNodeClass * const VfsNodeProxyClass = &vfsNodeProxyTable;
 VfsNode::VfsNode(const char *name, time64_t timestamp, FsAccess access) :
   m_handle{nullptr},
   m_parent{nullptr},

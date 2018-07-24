@@ -6,5 +6,5 @@
 
 #include "Shell/ScriptHeaders.hpp"
 
-const char ScriptHeaders::OBJECT_HEADER[ScriptHeaders::OBJECT_HEADER_SIZE] = {'\x7F', 'B', 'I', 'N'};
-const char ScriptHeaders::SCRIPT_HEADER[ScriptHeaders::SCRIPT_HEADER_SIZE] = {'#', '!'};
+const uint8_t ScriptHeaders::OBJECT_HEADER[ScriptHeaders::OBJECT_HEADER_SIZE] = {'\x7F', 'B', 'I', 'N'};
+const uint8_t ScriptHeaders::SCRIPT_HEADER[ScriptHeaders::SCRIPT_HEADER_SIZE] = {'#', '!'};

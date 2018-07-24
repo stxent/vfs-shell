@@ -35,6 +35,8 @@ public:
     VfsHandle &m_handle;
   };
 
+  static const FsHandleClass table;
+
   VfsHandle(const VfsHandle &) = delete;
   VfsHandle &operator=(const VfsHandle &) = delete;
 
