@@ -12,24 +12,8 @@
 class EchoScript: public ShellScript
 {
 public:
-  EchoScript(Script *parent, ArgumentIterator firstArgument, ArgumentIterator lastArgument) :
-    ShellScript{parent, firstArgument, lastArgument}
-  {
-  }
-
-  virtual Result run() override
-  {
-    for (auto iter = m_firstArgument; iter != m_lastArgument; ++iter)
-    {
-      tty() << *iter;
-
-      if (iter != m_lastArgument - 1)
-        tty() << " ";
-    }
-    tty() << Terminal::EOL;
-
-    return E_OK;
-  }
+  EchoScript(Script *, ArgumentIterator, ArgumentIterator);
+  virtual Result run() override;
 
   static const char *name()
   {

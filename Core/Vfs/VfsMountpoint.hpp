@@ -7,6 +7,7 @@
 #ifndef VFS_SHELL_CORE_VFS_VFSMOUNTPOINT_HPP_
 #define VFS_SHELL_CORE_VFS_VFSMOUNTPOINT_HPP_
 
+#include <functional>
 #include <memory>
 #include <xcore/interface.h>
 #include "Vfs/Vfs.hpp"
@@ -14,55 +15,11 @@
 class VfsMountpoint: public VfsNode
 {
 public:
-  VfsMountpoint(const char *name, FsHandle *targetHandle, Interface *targetInterface,
-      time64_t timestamp = 0, FsAccess access = FS_ACCESS_READ | FS_ACCESS_WRITE) :
-    VfsNode{name, timestamp, access},
-    m_targetHandle{targetHandle, [](FsHandle *pointer){ deinit(pointer); }},
-    m_targetInterface{targetInterface, [](Interface *pointer){ deinit(pointer); }}
-  {
-  }
+  VfsMountpoint(const char *, FsHandle *, Interface *, time64_t = 0, FsAccess = FS_ACCESS_READ | FS_ACCESS_WRITE);
 
-  virtual Result create(const FsFieldDescriptor *descriptors, size_t number) override
-  {
-    FsNode * const rootNode = static_cast<FsNode *>(fsHandleRoot(m_targetHandle.get()));
-
-    if (rootNode != nullptr)
-    {
-      const Result res = fsNodeCreate(rootNode, descriptors, number);
-      fsNodeFree(rootNode);
-      return res;
-    }
-    else
-      return E_ERROR;
-  }
-
-  virtual void *head() override
-  {
-    FsNode * const rootNode = static_cast<FsNode *>(fsHandleRoot(m_targetHandle.get()));
-
-    if (rootNode != nullptr)
-    {
-      FsNode * const child = static_cast<FsNode *>(fsNodeHead(rootNode));
-      fsNodeFree(rootNode);
-      return child;
-    }
-    else
-      return nullptr;
-  }
-
-  virtual Result remove(FsNode *node) override
-  {
-    FsNode * const rootNode = static_cast<FsNode *>(fsHandleRoot(m_targetHandle.get()));
-
-    if (rootNode != nullptr)
-    {
-      const Result res = fsNodeRemove(rootNode, node);
-      fsNodeFree(rootNode);
-      return res;
-    }
-    else
-      return E_ERROR;
-  }
+  virtual Result create(const FsFieldDescriptor *descriptors, size_t number) override;
+  virtual void *head() override;
+  virtual Result remove(FsNode *node) override;
 
 private:
   std::unique_ptr<FsHandle, std::function<void (FsHandle *)>> m_targetHandle;

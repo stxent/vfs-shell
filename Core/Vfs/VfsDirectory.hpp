@@ -15,10 +15,7 @@ class VfsHandle;
 class VfsDirectory: public VfsNode
 {
 public:
-  VfsDirectory(const char *name, time64_t timestamp = 0, FsAccess access = FS_ACCESS_READ | FS_ACCESS_WRITE) :
-    VfsNode{name, timestamp, access}
-  {
-  }
+  VfsDirectory(const char *, time64_t = 0, FsAccess = FS_ACCESS_READ | FS_ACCESS_WRITE);
 
   virtual Result create(const FsFieldDescriptor *, size_t) override;
   virtual VfsNode *fetch(VfsNode *current) override;

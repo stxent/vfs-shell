@@ -7,27 +7,17 @@
 #ifndef VFS_SHELL_CORE_SHELL_SCRIPTS_HELPSCRIPT_HPP_
 #define VFS_SHELL_CORE_SHELL_SCRIPTS_HELPSCRIPT_HPP_
 
-#include <iterator>
-#include "Shell/ShellHelpers.hpp"
 #include "Shell/ShellScript.hpp"
 
 class HelpScript: public ShellScript
 {
 public:
-  HelpScript(Script *parent, ArgumentIterator firstArgument, ArgumentIterator lastArgument) :
-    ShellScript{parent, firstArgument, lastArgument}
-  {
-  }
-
-  virtual Result run() override
-  {
-    const char * const arguments[] = {"ls", env()["PATH"]};
-    return Evaluator<ArgumentIterator>{this, std::cbegin(arguments), std::cend(arguments)}.run();
-  }
+  HelpScript(Script *, ArgumentIterator, ArgumentIterator);
+  virtual Result run() override;
 
   static const char *name()
   {
-    return "man";
+    return "help";
   }
 };
 

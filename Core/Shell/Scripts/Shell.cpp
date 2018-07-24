@@ -1,17 +1,45 @@
 /*
- * ShellScript.cpp
+ * Shell.cpp
  * Copyright (C) 2017 xent
  * Project is distributed under the terms of the GNU General Public License v3.0
  */
 
-#include <algorithm>
-#include <cassert>
-#include <cctype>
 #include <iterator>
-#include <xcore/bits.h>
 #include "Shell/ArgParser.hpp"
 #include "Shell/Evaluator.hpp"
 #include "Shell/Scripts/Shell.hpp"
+#include "Shell/ShellHelpers.hpp"
+
+Shell::Shell(Script *parent, ArgumentIterator firstArgument, ArgumentIterator lastArgument) :
+  ShellScript{parent, firstArgument, lastArgument},
+  m_executable{extractExecutablePath(firstArgument, lastArgument)},
+  m_terminal{this, parent->tty(), m_executable},
+  m_semaphore{0},
+  m_state{State::IDLE}
+{
+}
+
+Result Shell::onEventReceived(const ScriptEvent *event)
+{
+  switch (event->event)
+  {
+    case ScriptEvent::Event::SERIAL_INPUT:
+      if (m_state == State::IDLE)
+      {
+        m_semaphore.post();
+      }
+      else
+      {
+        m_terminal.onEventReceived(event);
+      }
+      break;
+
+    default:
+      break;
+  }
+
+  return E_OK;
+}
 
 Result Shell::run()
 {
@@ -144,4 +172,29 @@ void Shell::evaluate(char *command, size_t length)
   {
     m_terminal << name() << ": incorrect command string" << Terminal::EOL;
   }
+}
+
+const char *Shell::extractExecutablePath(ArgumentIterator firstArgument, ArgumentIterator lastArgument)
+{
+  struct Arguments
+  {
+    Arguments() :
+      path{nullptr}
+    {
+    }
+
+    const char *path;
+  };
+
+  static const ArgParser::Descriptor descriptors[] = {
+      {nullptr, "FILE", "read commands from the file system entry", 1, positionalArgumentParser}
+  };
+
+  return ArgParser::parse<Arguments>(firstArgument, lastArgument,
+      std::cbegin(descriptors), std::cend(descriptors)).path;
+}
+
+void Shell::positionalArgumentParser(void *object, const char *argument)
+{
+  *static_cast<const char **>(object) = argument;
 }

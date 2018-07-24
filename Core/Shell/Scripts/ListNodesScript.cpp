@@ -9,6 +9,24 @@
 #include "Shell/Settings.hpp"
 #include "Shell/ShellHelpers.hpp"
 
+const std::array<ArgParser::Descriptor, 5> ListNodesScript::descriptors{
+    {
+        {"--help", nullptr, "show this help message and exit", 0, Arguments::helpSetter},
+        {"-i", nullptr, "show index of each node", 0, Arguments::showInodesSetter},
+        {"-h", nullptr, "print human readable sizes", 0, Arguments::humanReadableSetter},
+        {"-l", nullptr, "show detailed information", 0, Arguments::longListingSetter},
+        {nullptr, "ENTRY", "directory to be shown", 0, Arguments::incrementNodeCount}
+    }
+};
+
+ListNodesScript::ListNodesScript(Script *parent, ArgumentIterator firstArgument, ArgumentIterator lastArgument) :
+  ShellScript{parent, firstArgument, lastArgument},
+  m_arguments{ArgParser::parse<Arguments>(m_firstArgument, m_lastArgument,
+      descriptors.cbegin(), descriptors.cend())},
+  m_result{E_OK}
+{
+}
+
 Terminal &operator<<(Terminal &output, ListNodesScript::HumanReadableLength length)
 {
   static const std::array<char, 4> suffixes = {'\0', 'K', 'M', 'G'};
@@ -48,14 +66,14 @@ Result ListNodesScript::run()
 {
   if (m_arguments.help)
   {
-    ArgParser::help(tty(), name(), descriptors().cbegin(), descriptors().cend());
+    ArgParser::help(tty(), name(), descriptors.cbegin(), descriptors.cend());
     return E_OK;
   }
   else
   {
     if (m_arguments.nodeCount)
     {
-      ArgParser::invoke(m_firstArgument, m_lastArgument, descriptors().cbegin(), descriptors().cend(),
+      ArgParser::invoke(m_firstArgument, m_lastArgument, descriptors.cbegin(), descriptors.cend(),
           [this](const char *key){ printDirectoryContent(key); });
     }
     else
@@ -98,7 +116,7 @@ void ListNodesScript::printDirectoryContent(const char *positionalArgument)
 
   do
   {
-    char nodeName[128]; // XXX
+    char nodeName[Settings::ENTRY_NAME_LENGTH];
     FsAccess nodeAccess;
 
     if ((res = fsNodeRead(child, FS_NODE_NAME, 0, nodeName, sizeof(nodeName), nullptr)) != E_OK)

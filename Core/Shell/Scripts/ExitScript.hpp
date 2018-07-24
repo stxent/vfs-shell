@@ -12,21 +12,8 @@
 class ExitScript: public ShellScript
 {
 public:
-  ExitScript(Script *parent, ArgumentIterator firstArgument, ArgumentIterator lastArgument) :
-    ShellScript{parent, firstArgument, lastArgument}
-  {
-  }
-
-  virtual Result run() override
-  {
-//    SignalEvent event;
-//
-//    event.event = ScriptEvent::Event::SIGNAL;
-//    event.signal = SIGINT;
-//
-//    shell->onEventReceived(&event); //TODO
-    return E_OK;
-  }
+  ExitScript(Script *, ArgumentIterator, ArgumentIterator);
+  virtual Result run() override;
 
   static const char *name()
   {

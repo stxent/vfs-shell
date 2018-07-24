@@ -5,9 +5,15 @@
  */
 
 #include <algorithm>
+#include <cstring> // TODO
 #include "Vfs/VfsDataNode.hpp"
 #include "Vfs/VfsDirectory.hpp"
 #include "Vfs/VfsHandle.hpp"
+
+VfsDirectory::VfsDirectory(const char *name, time64_t timestamp, FsAccess access) :
+  VfsNode{name, timestamp, access}
+{
+}
 
 Result VfsDirectory::create(const FsFieldDescriptor *descriptors, size_t number)
 {
@@ -21,9 +27,6 @@ Result VfsDirectory::create(const FsFieldDescriptor *descriptors, size_t number)
   for (size_t index = 0; index < number; ++index)
   {
     const FsFieldDescriptor * const desc = descriptors + index;
-
-    if (desc->data == nullptr)
-      return E_VALUE;
 
     switch (desc->type)
     {

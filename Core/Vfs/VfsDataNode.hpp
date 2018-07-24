@@ -13,70 +13,21 @@
 class VfsDataNode: public VfsNode
 {
 public:
-  VfsDataNode(const char *name, const void *data, size_t dataLength, time64_t timestamp = 0,
-      FsAccess access = FS_ACCESS_READ | FS_ACCESS_WRITE) :
-    VfsNode{name, timestamp, access},
-    m_dataLength{dataLength},
-    m_dataBuffer{std::make_unique<uint8_t []>(m_dataLength)}
-  {
-    memcpy(m_dataBuffer.get(), data, m_dataLength);
-  }
+  VfsDataNode(const char *, const void *, size_t, time64_t = 0, FsAccess = FS_ACCESS_READ | FS_ACCESS_WRITE);
 
-  virtual Result length(FsFieldType type, FsLength *fieldLength)
-  {
-    switch (type)
-    {
-      case FS_NODE_DATA:
-        if (fieldLength != nullptr)
-          *fieldLength = static_cast<FsLength>(m_dataLength);
-        return E_OK;
-
-      default:
-        return VfsNode::length(type, fieldLength);
-    }
-  }
-
-  virtual Result read(FsFieldType type, FsLength position, void *buffer, size_t bufferLength,
-      size_t *bytesRead) override
-  {
-    switch (type)
-    {
-      case FS_NODE_DATA:
-      {
-        if (position <= static_cast<FsLength>(m_dataLength))
-        {
-          const size_t chunkLength = static_cast<size_t>(std::min(static_cast<FsLength>(m_dataLength) - position,
-              static_cast<FsLength>(bufferLength)));
-          memcpy(buffer, m_dataBuffer.get() + position, chunkLength);
-          if (bytesRead != nullptr)
-            *bytesRead = chunkLength;
-          return E_OK;
-        }
-        else
-          return E_VALUE;
-      }
-
-      default:
-        return VfsNode::read(type, position, buffer, bufferLength, bytesRead);
-    }
-  }
-
-  virtual Result write(FsFieldType type, FsLength position, const void *buffer, size_t bufferLength,
-      size_t *bytesWritten) override
-  {
-    switch (type)
-    {
-      case FS_NODE_DATA:
-        return E_INVALID; // TODO
-
-      default:
-        return VfsNode::write(type, position, buffer, bufferLength, bytesWritten);
-    }
-  }
+  virtual Result length(FsFieldType, FsLength *) override;
+  virtual Result read(FsFieldType, FsLength, void *, size_t, size_t *) override;
+  virtual Result write(FsFieldType, FsLength, const void *, size_t, size_t *) override;
 
 private:
+  static constexpr size_t INITIAL_LENGTH = 16;
+
+  size_t m_dataCapacity;
   size_t m_dataLength;
   std::unique_ptr<uint8_t []> m_dataBuffer;
+
+  void reallocateDataBuffer(size_t);
+  Result writeData(FsLength, const void *, size_t, size_t *);
 };
 
 #endif // VFS_SHELL_CORE_VFS_VFSDATANODE_HPP_
