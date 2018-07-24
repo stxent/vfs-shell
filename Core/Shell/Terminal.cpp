@@ -59,10 +59,34 @@ Terminal &operator<<(Terminal &output, char buffer)
   return output;
 }
 
+Terminal &operator<<(Terminal &output, Terminal::Color value)
+{
+  const char high = value == Terminal::Color::WHITE ? '9' : '3';
+  const char low = static_cast<char>('0' + static_cast<int>(value));
+
+  const char buffer[] = {'\033', '[', high, low, 'm'};
+  output.write(buffer, sizeof(buffer));
+
+  return output;
+}
+
 Terminal &operator<<(Terminal &output, Terminal::Control value)
 {
-  if (value == Terminal::Control::EOL)
-    output.write("\r\n", 2);
+  switch (value)
+  {
+    case Terminal::Control::EOL:
+      output.write("\r\n", 2);
+      break;
+
+    case Terminal::Control::REGULAR:
+      output.write("\033[22m", 5);
+      break;
+
+    case Terminal::Control::BOLD:
+      output.write("\033[1m", 4);
+      break;
+  }
+
   return output;
 }
 

@@ -14,6 +14,18 @@
 class TerminalHelpers
 {
 public:
+  enum class Color
+  {
+    BLACK,
+    RED,
+    GREEN,
+    YELLOW,
+    BLUE,
+    MAGENTA,
+    CYAN,
+    WHITE
+  };
+
   enum class Format
   {
     DEC,

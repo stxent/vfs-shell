@@ -19,13 +19,16 @@ class Script;
 class Terminal
 {
 public:
+  using Color = TerminalHelpers::Color;
   using Format = TerminalHelpers::Format;
   using Fill = TerminalHelpers::Fill;
   using Width = TerminalHelpers::Width;
 
   enum Control
   {
-    EOL
+    EOL,
+    REGULAR,
+    BOLD
   };
 
   virtual ~Terminal() = default;
@@ -68,6 +71,7 @@ private:
 
   friend Terminal &operator<<(Terminal &, const char *);
   friend Terminal &operator<<(Terminal &, char);
+  friend Terminal &operator<<(Terminal &, Terminal::Color);
   friend Terminal &operator<<(Terminal &, Terminal::Control);
   friend Terminal &operator<<(Terminal &, Terminal::Fill);
   friend Terminal &operator<<(Terminal &, Terminal::Format);
