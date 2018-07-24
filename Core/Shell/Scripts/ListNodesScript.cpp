@@ -27,6 +27,19 @@ ListNodesScript::ListNodesScript(Script *parent, ArgumentIterator firstArgument,
 {
 }
 
+Terminal &operator<<(Terminal &output, ListNodesScript::HumanReadableAccess access)
+{
+  const char buffer[] = {
+      access.directory ? 'd' : '-',
+      access.value & FS_ACCESS_READ ? 'r' : '-',
+      access.value & FS_ACCESS_WRITE ? 'w' : '-',
+      '\0'
+  };
+
+  output.write(buffer, sizeof(buffer));
+  return output;
+}
+
 Terminal &operator<<(Terminal &output, ListNodesScript::HumanReadableLength length)
 {
   static const std::array<char, 4> suffixes = {'\0', 'K', 'M', 'G'};
@@ -59,6 +72,29 @@ Terminal &operator<<(Terminal &output, ListNodesScript::HumanReadableLength leng
     output << suffixes[index];
 
   output << Terminal::Width{initialWidth};
+  return output;
+}
+
+Terminal &operator<<(Terminal &output, ListNodesScript::HumanReadableTime timestamp)
+{
+  RtDateTime convertedTime;
+  rtMakeTime(&convertedTime, timestamp.value / 1000000);
+
+  const auto fill = output.fill();
+  const auto width = output.width();
+
+  output << Terminal::Fill{'0'} << Terminal::Width{4};
+  output << static_cast<unsigned int>(convertedTime.year);
+  output << Terminal::Width{2};
+  output << "-" << static_cast<unsigned int>(convertedTime.month);
+  output << "-" << static_cast<unsigned int>(convertedTime.day);
+  output << " " << static_cast<unsigned int>(convertedTime.hour);
+  output << ":" << static_cast<unsigned int>(convertedTime.minute);
+  output << ":" << static_cast<unsigned int>(convertedTime.second);
+  output << Terminal::Width{3};
+  output << "." << static_cast<unsigned int>(static_cast<unsigned int>((timestamp.value % 1000000) / 1000));
+  output << width << fill;
+
   return output;
 }
 
@@ -149,53 +185,43 @@ void ListNodesScript::printDirectoryContent(const char *positionalArgument)
     fsNodeRead(child, FS_NODE_TIME, 0, &nodeTime, sizeof(nodeTime), nullptr);
 
     // Get information about child nodes
-    FsNode * const descendant = static_cast<FsNode *>(fsNodeHead(child));
+    FsNode * const firstDescendant = static_cast<FsNode *>(fsNodeHead(child));
     bool hasDescendants = false;
 
-    if (descendant)
+    if (firstDescendant)
     {
       hasDescendants = true;
-      fsNodeFree(descendant);
+      fsNodeFree(firstDescendant);
     }
 
     if (m_arguments.longListing)
     {
-      // Access
-      char printableNodeAccess[4];
-
-      printableNodeAccess[0] = hasDescendants ? 'd' : '-';
-      printableNodeAccess[1] = nodeAccess & FS_ACCESS_READ ? 'r' : '-';
-      printableNodeAccess[2] = nodeAccess & FS_ACCESS_WRITE ? 'w' : '-';
-      printableNodeAccess[3] = '\0';
-
-      // Date and time
-      const time_t unixTime = static_cast<time_t>(nodeTime / 1000000);
-      const unsigned int nodeTimeFrac = static_cast<unsigned int>((nodeTime % 1000000) / 1000);
-      RtDateTime convertedTime;
-      char printableNodeTime[32];
-
-      rtMakeTime(&convertedTime, unixTime);
-      sprintf(printableNodeTime, "%04u-%02u-%02u %02u:%02u:%02u.%03u",
-          convertedTime.year, convertedTime.month, convertedTime.day,
-          convertedTime.hour, convertedTime.minute, convertedTime.second,
-          nodeTimeFrac);
-
-      // Print all values
       const auto format = tty().format();
       const auto width = tty().width();
 
+      // Print inode value
       if (m_arguments.showInodes)
         tty() << Terminal::Width{16} << Terminal::Format::HEX << nodeId << Terminal::Width{1} << Terminal::Format::DEC;
 
-      tty() << " " << printableNodeAccess;
+      // Print access flags
+      tty() << " " << HumanReadableAccess{nodeAccess, hasDescendants};
 
+      // Print node size
+      tty() << " ";
       if (m_arguments.humanReadable)
-        tty() << " " << Terminal::Width{8} << HumanReadableLength{nodeDataLength} << Terminal::Width{1};
+        tty() << Terminal::Width{8} << HumanReadableLength{nodeDataLength} << Terminal::Width{1};
       else
-        tty() << " " << Terminal::Width{10} << nodeDataLength << Terminal::Width{1};
+        tty() << Terminal::Width{10} << nodeDataLength << Terminal::Width{1};
 
-      tty() << " " << printableNodeTime;
-      tty() << " " << nodeName;
+      // Date and time
+      tty() << " " << HumanReadableTime{nodeTime};
+
+      tty() << " ";
+      if (hasDescendants)
+        tty() << Terminal::BOLD << Terminal::Color::BLUE << nodeName << Terminal::Color::WHITE << Terminal::REGULAR;
+      else
+        tty() << nodeName;
+
       tty() << Terminal::EOL;
       tty() << format << width;
     }

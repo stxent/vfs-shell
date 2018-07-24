@@ -76,20 +76,20 @@ Result DateScript::setTime(const char *inputString)
 
 Result DateScript::showTime()
 {
-  RtDateTime currentTime;
-  rtMakeTime(&currentTime, time().getTime() / 1000000);
+  RtDateTime convertedTime;
+  rtMakeTime(&convertedTime, time().getTime() / 1000000);
 
   const auto fill = tty().fill();
   const auto width = tty().width();
 
   tty() << Terminal::Fill{'0'} << Terminal::Width{2};
-  tty() << static_cast<unsigned int>(currentTime.hour);
-  tty() << ":" << static_cast<unsigned int>(currentTime.minute);
-  tty() << ":" << static_cast<unsigned int>(currentTime.second);
-  tty() << " " << static_cast<unsigned int>(currentTime.day);
-  tty() << "." << static_cast<unsigned int>(currentTime.month);
+  tty() << static_cast<unsigned int>(convertedTime.hour);
+  tty() << ":" << static_cast<unsigned int>(convertedTime.minute);
+  tty() << ":" << static_cast<unsigned int>(convertedTime.second);
+  tty() << " " << static_cast<unsigned int>(convertedTime.day);
+  tty() << "." << static_cast<unsigned int>(convertedTime.month);
   tty() << Terminal::Width{4};
-  tty() << "." << static_cast<unsigned int>(currentTime.year);
+  tty() << "." << static_cast<unsigned int>(convertedTime.year);
   tty() << Terminal::EOL;
   tty() << width << fill;
 

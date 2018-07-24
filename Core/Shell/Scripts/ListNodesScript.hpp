@@ -23,12 +23,25 @@ public:
   }
 
 private:
+  struct HumanReadableAccess
+  {
+    FsAccess value;
+    bool directory;
+  };
+
   struct HumanReadableLength
   {
     FsLength value;
   };
 
+  struct HumanReadableTime
+  {
+    time64_t value;
+  };
+
+  friend Terminal &operator<<(Terminal &, HumanReadableAccess);
   friend Terminal &operator<<(Terminal &, HumanReadableLength);
+  friend Terminal &operator<<(Terminal &, HumanReadableTime);
 
   struct Arguments
   {
