@@ -191,8 +191,19 @@ FsNode *ShellHelpers::openNode(FsHandle *handle, const char *path)
 FsNode *ShellHelpers::openScript(FsHandle *handle, Environment &env, const char *path)
 {
   char absolutePath[Settings::PWD_LENGTH];
+  FsNode *node;
+
+  // Search node in the PATH
   ShellHelpers::joinPaths(absolutePath, env["PATH"], path);
-  return ShellHelpers::openNode(handle, absolutePath);
+  if ((node = ShellHelpers::openNode(handle, absolutePath)) != nullptr)
+    return node;
+
+  // Search node in the current directory
+  ShellHelpers::joinPaths(absolutePath, env["PWD"], path);
+  if ((node = ShellHelpers::openNode(handle, absolutePath)) != nullptr)
+    return node;
+
+  return nullptr;
 }
 
 FsNode *ShellHelpers::openSink(FsHandle *fs, Environment &env, TimeProvider &time, const char *path, bool overwrite,
