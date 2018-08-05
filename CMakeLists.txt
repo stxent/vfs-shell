@@ -9,6 +9,7 @@ if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Debug CACHE STRING "The type of build: Debug Release RelWithDebInfo MinSizeRel." FORCE)
 endif()
 
+option(BUILD_TESTS "Build tests." OFF)
 option(USE_LTO "Enable Link Time Optimization." OFF)
 
 # Configure build flags
@@ -50,3 +51,8 @@ include("Libs/CMakeLists.txt")
 add_executable(${PROJECT_NAME} ${CORE_SOURCES} ${PLATFORM_SOURCES})
 add_dependencies(${PROJECT_NAME} yaf osw dpm halm xcore)
 target_link_libraries(${PROJECT_NAME} ${PLATFORM_LIBS})
+
+if(${BUILD_TESTS})
+    enable_testing()
+    add_subdirectory(Tests)
+endif()

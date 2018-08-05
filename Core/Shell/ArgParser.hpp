@@ -241,7 +241,7 @@ private:
       {
         const size_t left = static_cast<size_t>(lastArgument - currentArgument);
 
-        if (left >= optional->count)
+        if (left >= optional->count + 1)
         {
           if (optional->callback != nullptr)
           {
@@ -277,7 +277,7 @@ private:
       }
       else
       {
-        // Unhandled argument
+        // Unknown argument
         parsingStatus = false;
         break;
       }
