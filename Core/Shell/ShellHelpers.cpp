@@ -7,24 +7,34 @@
 #include "Shell/Settings.hpp"
 #include "Shell/ShellHelpers.hpp"
 
-const std::array<const char *, E_RESULT_END> ShellHelpers::PRINTABLE_RESULTS = {
-    "E_OK",
-    "E_ERROR",
-    "E_MEMORY",
-    "E_ACCESS",
-    "E_ADDRESS",
-    "E_BUSY",
-    "E_DEVICE",
-    "E_IDLE",
-    "E_INTERFACE",
-    "E_INVALID",
-    "E_TIMEOUT",
-    "E_VALUE",
-    "E_ENTRY",
-    "E_EXIST",
-    "E_EMPTY",
-    "E_FULL"
-};
+Terminal &operator<<(Terminal &output, ShellHelpers::ResultSerializer container)
+{
+  static const std::array<const char *, E_RESULT_END> PRINTABLE_RESULTS{
+      "E_OK",
+      "E_ERROR",
+      "E_MEMORY",
+      "E_ACCESS",
+      "E_ADDRESS",
+      "E_BUSY",
+      "E_DEVICE",
+      "E_IDLE",
+      "E_INTERFACE",
+      "E_INVALID",
+      "E_TIMEOUT",
+      "E_VALUE",
+      "E_ENTRY",
+      "E_EXIST",
+      "E_EMPTY",
+      "E_FULL"
+  };
+
+  if (container.m_result < PRINTABLE_RESULTS.size())
+    output << PRINTABLE_RESULTS[container.m_result];
+  else
+    output << container.m_result;
+
+  return output;
+}
 
 const char *ShellHelpers::extractName(const char *path)
 {

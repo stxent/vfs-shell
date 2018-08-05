@@ -14,7 +14,7 @@ Shell::Shell(Script *parent, ArgumentIterator firstArgument, ArgumentIterator la
   ShellScript{parent, firstArgument, lastArgument},
   m_executable{extractExecutablePath(firstArgument, lastArgument)},
   m_terminal{this, parent->tty(), m_executable},
-  m_semaphore{0},
+  m_semaphore{m_executable != nullptr ? 1 : 0},
   m_state{State::IDLE}
 {
 }
@@ -43,103 +43,71 @@ Result Shell::onEventReceived(const ScriptEvent *event)
 
 Result Shell::run()
 {
-  auto &workDir = env()["PWD"];
-  size_t position = 0;
-  char command[COMMAND_BUFFER];
-  char carriage = 0;
-  bool interactive = m_executable == nullptr;
-  bool echo = (interactive && strcmp(env()["ECHO"], "0") != 0) || strcmp(env()["DEBUG"], "1") == 0;
+  const bool interactive = m_executable == nullptr;
+  const bool echo = (interactive && strcmp(env()["ECHO"], "0") != 0) || strcmp(env()["DEBUG"], "0") != 0;
+
+  EscapeSeqParser escapeParser;
+  LineParser lineParser{m_terminal, echo};
+
+  auto &pwd = env()["PWD"];
+  Result lastCommandResult = E_OK;
 
   if (interactive)
-    m_terminal << workDir << "> ";
+    showPrompt(pwd);
 
   do
   {
-    if (interactive)
-      m_semaphore.wait();
+    m_semaphore.wait();
 
     char rxBuffer[RX_BUFFER];
     size_t rxCount;
 
     while (m_state != State::STOP && (rxCount = m_terminal.read(rxBuffer, sizeof(rxBuffer))))
     {
-      const char *outputStart = rxBuffer;
-      const char *outputEnd = rxBuffer;
-
       for (size_t i = 0; i < rxCount; ++i)
       {
-        const char c = rxBuffer[i];
+        const auto escapeStatus = escapeParser.parse(rxBuffer[i]);
 
-        if (c == '\x03') // End of text
+        if (escapeStatus == EscapeSeqParser::Status::COMPLETED)
         {
-          m_state = State::STOP;
+          const auto ev = escapeParser.event();
 
-          if (echo)
-          {
-            m_terminal.write(outputStart, outputEnd - outputStart);
-            m_terminal << "^C" << Terminal::EOL;
-          }
-          outputStart = outputEnd = rxBuffer + i + 1;
-
-          break;
+          if (ev == EscapeSeqParser::RIGHT)
+            lineParser.moveCursorRight();
+          else if (ev == EscapeSeqParser::LEFT)
+            lineParser.moveCursorLeft();
+          else if (ev == EscapeSeqParser::DEL)
+            lineParser.eraseNext();
         }
-        else if (c == '\r' || c == '\n') // New line
+        else if (escapeStatus == EscapeSeqParser::Status::DISCARDED)
         {
-          if (!carriage || carriage == c)
+          const auto lineStatus = lineParser.parse(rxBuffer[i]);
+
+          if (lineStatus == LineParser::Status::COMPLETED || lineStatus == LineParser::Status::TERMINATED)
           {
-            command[position] = '\0';
-
-            if (echo)
-            {
-              m_terminal.write(outputStart, outputEnd - outputStart);
-              m_terminal << Terminal::EOL;
-            }
-            outputStart = outputEnd = rxBuffer + i + 1;
-
-            evaluate(command, position);
-            position = 0;
+            // Data buffered in the parser will be modified during evaluation to preserve memory
+            lastCommandResult = evaluate(lineParser.data(), lineParser.length(), echo);
+            lineParser.reset();
 
             if (interactive)
-              m_terminal << workDir << "> ";
+              showPrompt(pwd);
           }
-          carriage = c;
-        }
-        else if (c == '\b' || c == '\x7F') // Backspace
-        {
-          if (position > 0)
-          {
-            if (echo)
-            {
-              m_terminal.write(outputStart, outputEnd - outputStart);
-              m_terminal << "\x08 \x08";
-            }
-            outputStart = outputEnd = rxBuffer + i + 1;
 
-            --position;
-          }
-          carriage = 0;
-        }
-        else
-        {
-          if (position < sizeof(command) - 1)
+          if (lineStatus == LineParser::Status::TERMINATED)
           {
-            command[position++] = rxBuffer[i];
-            outputEnd = rxBuffer + i + 1;
+            m_state = State::STOP;
+            break;
           }
-          carriage = 0;
         }
       }
-
-      if (echo)
-        m_terminal.write(outputStart, outputEnd - outputStart);
     }
   }
-  while (interactive && m_state != State::STOP); // FIXME Rewrite slave logic more thoughtfully
+  while (m_state != State::STOP);
 
-  return E_OK; // TODO
+  return lastCommandResult;
 }
 
-void Shell::evaluate(char *command, size_t length)
+Result Shell::evaluate(char *command, size_t length, bool echo)
 {
   char *arguments[ARGUMENT_COUNT];
   size_t count;
@@ -157,21 +125,21 @@ void Shell::evaluate(char *command, size_t length)
       if (m_state != State::STOP)
         m_state = State::IDLE;
 
-      if (res != E_OK)
-      {
-        m_terminal << name() << ": command failed, error code ";
-        if (res < ShellHelpers::PRINTABLE_RESULTS.size())
-          m_terminal << ShellHelpers::PRINTABLE_RESULTS[res];
-        else
-          m_terminal << res;
-        m_terminal << Terminal::EOL;
-      }
+      if (res != E_OK && echo)
+        m_terminal << name() << ": command error " << ShellHelpers::ResultSerializer{res} << Terminal::EOL;
     }
   }
-  else if (res != E_EMPTY)
+  else if (res != E_EMPTY && echo)
   {
-    m_terminal << name() << ": incorrect command string" << Terminal::EOL;
+    m_terminal << name() << ": incorrect input" << Terminal::EOL;
   }
+
+  return res;
+}
+
+void Shell::showPrompt(EnvironmentVariable &pwd)
+{
+  m_terminal << pwd << "> ";
 }
 
 const char *Shell::extractExecutablePath(ArgumentIterator firstArgument, ArgumentIterator lastArgument)

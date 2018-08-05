@@ -11,13 +11,18 @@
 #include "Shell/Script.hpp"
 #include "Shell/ScriptHeaders.hpp"
 
+class Terminal;
+
 struct ShellHelpers
 {
+  struct ResultSerializer
+  {
+    Result m_result;
+  };
+
   ShellHelpers() = delete;
   ShellHelpers(const ShellHelpers &) = delete;
   ShellHelpers &operator=(const ShellHelpers &) = delete;
-
-  static const std::array<const char *, E_RESULT_END> PRINTABLE_RESULTS;
 
   static const char *extractName(const char *);
   static const char *followNextPart(FsHandle *, FsNode **, const char *, bool);
@@ -105,5 +110,7 @@ struct ShellHelpers
     return firstArgument != head ? E_OK : E_EMPTY;
   }
 };
+
+Terminal &operator<<(Terminal &, ShellHelpers::ResultSerializer);
 
 #endif // VFS_SHELL_CORE_SHELL_SHELLHELPERS_HPP_

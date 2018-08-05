@@ -12,7 +12,7 @@ TerminalProxy::TerminalProxy(Script *parent, Terminal &terminal, const char *inp
   m_terminal{terminal},
   m_parent{parent},
   m_subscriber{nullptr},
-  m_input{nullptr, 0},
+  m_input{nullptr, 0, false},
   m_output{nullptr, 0}
 {
   // TODO Better error handling
@@ -54,15 +54,32 @@ void TerminalProxy::unsubscribe(const Script *script)
 
 size_t TerminalProxy::read(char *buffer, size_t length)
 {
+  if (!length)
+    return 0;
+
   if (m_input.node != nullptr)
   {
     size_t count;
+    const auto res = fsNodeRead(m_input.node.get(), FsFieldType::FS_NODE_DATA, m_input.position,
+        buffer, length, &count);
 
-    if (fsNodeRead(m_input.node.get(), FsFieldType::FS_NODE_DATA, m_input.position, buffer, length,
-        &count) == E_OK)
+    if (res == E_OK)
     {
-      m_input.position += static_cast<FsLength>(count);
-      return count;
+      if (count > 0)
+      {
+        m_input.position += static_cast<FsLength>(count);
+        m_input.eof = false;
+        return count;
+      }
+      else if (!m_input.eof)
+      {
+        // Save EOF flag and inject end of text marker
+        m_input.eof = true;
+        *buffer = '\x03';
+        return 1;
+      }
+      else
+        return 0;
     }
     else
       return 0;
@@ -75,12 +92,16 @@ size_t TerminalProxy::read(char *buffer, size_t length)
 
 size_t TerminalProxy::write(const char *buffer, size_t length)
 {
+  if (!length)
+    return 0;
+
   if (m_output.node != nullptr)
   {
     size_t count;
+    const auto res = fsNodeWrite(m_output.node.get(), FsFieldType::FS_NODE_DATA, m_output.position,
+        buffer, length, &count);
 
-    if (fsNodeWrite(m_output.node.get(), FsFieldType::FS_NODE_DATA, m_output.position, buffer, length,
-        &count) == E_OK)
+    if (res == E_OK)
     {
       m_output.position += static_cast<FsLength>(count);
       return count;

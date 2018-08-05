@@ -7,60 +7,22 @@
 #ifndef VFS_SHELL_CORE_SHELL_SERIALTERMINAL_HPP_
 #define VFS_SHELL_CORE_SHELL_SERIALTERMINAL_HPP_
 
-#include <algorithm>
 #include <list>
 #include <xcore/interface.h>
-#include "Shell/Script.hpp"
 #include "Shell/Terminal.hpp"
+
+class Script;
 
 class SerialTerminal: public Terminal
 {
 public:
-  SerialTerminal(Interface *interface) :
-    m_interface{interface}
-  {
-    ifSetCallback(m_interface, dataCallbackHelper, this);
-  }
+  SerialTerminal(Interface *);
+  virtual ~SerialTerminal();
 
-  virtual ~SerialTerminal()
-  {
-    ifSetCallback(m_interface, nullptr, nullptr);
-  }
-
-  virtual void subscribe(Script *script) override
-  {
-    m_subscribers.push_back(script);
-  }
-
-  virtual void unsubscribe(const Script *script) override
-  {
-    auto iter = std::find(m_subscribers.begin(), m_subscribers.end(), script);
-
-    if (iter != m_subscribers.end())
-      m_subscribers.erase(iter);
-  }
-
-  virtual size_t read(char *buffer, size_t length) override
-  {
-    // TODO Locks
-    return ifRead(m_interface, buffer, length);
-  }
-
-  virtual size_t write(const char *buffer, size_t length) override
-  {
-    // TODO Locks
-    const char *position = buffer;
-    size_t left = length;
-
-    while (left)
-    {
-      const size_t bytesWritten = ifWrite(m_interface, position, left);
-      left -= bytesWritten;
-      position += bytesWritten;
-    }
-
-    return length;
-  }
+  virtual void subscribe(Script *) override;
+  virtual void unsubscribe(const Script *) override;
+  virtual size_t read(char *, size_t) override;
+  virtual size_t write(const char *, size_t) override;
 
 private:
   static constexpr size_t BUFFER_SIZE = 64;
@@ -68,22 +30,7 @@ private:
   Interface *m_interface;
   std::list<Script *> m_subscribers;
 
-  void dataCallback()
-  {
-    size_t available;
-
-    if (ifGetParam(m_interface, IF_AVAILABLE, &available) == E_OK && available)
-    {
-      SerialInputEvent event;
-
-      event.event = ScriptEvent::Event::SERIAL_INPUT;
-      event.length = available;
-
-      // TODO Locks
-      for (auto script : m_subscribers)
-        script->onEventReceived(&event);
-    }
-  }
+  void dataCallback();
 
   static void dataCallbackHelper(void *argument)
   {

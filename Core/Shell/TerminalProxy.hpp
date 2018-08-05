@@ -30,6 +30,7 @@ private:
   {
     std::unique_ptr<FsNode, std::function<void (FsNode *)>> node;
     FsLength position;
+    bool eof;
   } m_input;
 
   struct
