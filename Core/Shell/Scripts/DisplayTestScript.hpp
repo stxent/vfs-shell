@@ -102,18 +102,10 @@ private:
 
   struct Arguments
   {
-    Arguments() :
-      dst{nullptr},
-      height{},
-      width{},
-      help{false}
-    {
-    }
-
-    const char *dst;
-    uint16_t height;
-    uint16_t width;
-    bool help;
+    const char *dst{nullptr};
+    uint16_t height{};
+    uint16_t width{};
+    bool help{false};
 
     static void dstSetter(void *object, const char *argument)
     {

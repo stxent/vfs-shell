@@ -10,7 +10,7 @@
 #include <iterator>
 #include "Shell/Scripts/MountScriptBase.hpp"
 
-template<class T>
+template<typename T>
 class MountScript: public MountScriptBase
 {
 public:
@@ -58,16 +58,9 @@ public:
 private:
   struct Arguments
   {
-    Arguments() :
-      image{nullptr},
-      entry{nullptr},
-      help{false}
-    {
-    }
-
-    const char *image;
-    const char *entry;
-    bool help;
+    const char *image{nullptr};
+    const char *entry{nullptr};
+    bool help{false};
 
     static void helpSetter(void *object, const char *)
     {

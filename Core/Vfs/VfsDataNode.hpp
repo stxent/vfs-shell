@@ -20,7 +20,7 @@ public:
   virtual Result write(FsFieldType, FsLength, const void *, size_t, size_t *) override;
 
 private:
-  static constexpr size_t INITIAL_LENGTH = 16;
+  static constexpr size_t INITIAL_LENGTH{16};
 
   size_t m_dataCapacity;
   size_t m_dataLength;

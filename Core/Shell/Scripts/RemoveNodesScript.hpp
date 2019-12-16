@@ -23,14 +23,8 @@ public:
 private:
   struct Arguments
   {
-    Arguments() :
-      help{false},
-      recursive{false}
-    {
-    }
-
-    bool help;
-    bool recursive;
+    bool help{false};
+    bool recursive{false};
 
     static void helpSetter(void *object, const char *)
     {

@@ -95,24 +95,13 @@ public:
 private:
   struct Arguments
   {
-    Arguments() :
-      src{nullptr},
-      dst{nullptr},
-      bs{BUFFER_SIZE},
-      count{0},
-      seek{0},
-      skip{0},
-      help{false}
-    {
-    }
-
-    const char *src;
-    const char *dst;
-    size_t bs;
-    size_t count;
-    size_t seek;
-    size_t skip;
-    bool help;
+    const char *src{nullptr};
+    const char *dst{nullptr};
+    size_t bs{BUFFER_SIZE};
+    size_t count{0};
+    size_t seek{0};
+    size_t skip{0};
+    bool help{false};
 
     static void srcSetter(void *object, const char *argument)
     {

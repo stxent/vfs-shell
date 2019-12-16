@@ -19,14 +19,8 @@ class CpuFrequencyScript: public ShellScript
 {
   struct PllValues
   {
-    unsigned int div;
-    unsigned int mul;
-
-    PllValues() :
-      div{},
-      mul{}
-    {
-    }
+    unsigned int div{};
+    unsigned int mul{};
   };
 
 public:
@@ -112,14 +106,8 @@ public:
 private:
   struct Arguments
   {
-    Arguments() :
-      frequency{0},
-      help{false}
-    {
-    }
-
-    unsigned long frequency;
-    bool help;
+    unsigned long frequency{0};
+    bool help{false};
 
     static void frequencySetter(void *object, const char *argument)
     {
@@ -138,8 +126,8 @@ private:
     // Multiplier values: 6..512
     // CCO range: from 275 MHz to 550 MHz
 
-    static constexpr unsigned long CCO_MIN = 275000000UL;
-    static constexpr unsigned long CCO_MAX = 550000000UL;
+    static constexpr unsigned long CCO_MIN{275000000UL};
+    static constexpr unsigned long CCO_MAX{550000000UL};
 
     const unsigned int lowerMul = std::max(6UL, (CCO_MIN + INPUT_FREQUENCY - 1) / INPUT_FREQUENCY);
     const unsigned int upperMul = std::min(512UL, CCO_MAX / INPUT_FREQUENCY);

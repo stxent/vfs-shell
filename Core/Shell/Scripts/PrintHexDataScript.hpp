@@ -49,16 +49,11 @@ public:
   }
 
 private:
-  static constexpr uint32_t INITIAL_CHECKSUM = 0;
+  static constexpr uint32_t INITIAL_CHECKSUM{0};
 
   struct Arguments
   {
-    Arguments() :
-      help{false}
-    {
-    }
-
-    bool help;
+    bool help{false};
 
     static void helpSetter(void *object, const char *)
     {
@@ -70,7 +65,7 @@ private:
 
   Result onDataRead(const void *buffer, size_t bytesRead)
   {
-    static constexpr size_t ROW_SIZE = 16;
+    static constexpr size_t ROW_SIZE{16};
     auto hexify = [](uint8_t value) { return value < 10 ? '0' + value : 'a' + (value - 10); };
 
     for (size_t row = 0; row < (bytesRead + (ROW_SIZE - 1)) / ROW_SIZE; ++row)

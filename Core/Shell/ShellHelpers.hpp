@@ -37,7 +37,7 @@ struct ShellHelpers
   static FsNode *openSink(FsHandle *, Environment &, TimeProvider &, const char *, bool, Result *);
   static FsNode *openSource(FsHandle *, Environment &, const char *);
 
-  template<class T>
+  template<typename T>
   static Result parseCommandString(T firstArgument, T lastArgument, char *input, size_t inputLength,
       size_t *argumentCount)
   {

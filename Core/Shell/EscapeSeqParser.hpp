@@ -35,7 +35,7 @@ public:
   Status parse(char);
 
 private:
-  static constexpr size_t MAX_SEQUENCE_LENGTH = 16;
+  static constexpr size_t MAX_SEQUENCE_LENGTH{16};
 
   std::array<char, MAX_SEQUENCE_LENGTH> m_sequence;
   size_t m_length;

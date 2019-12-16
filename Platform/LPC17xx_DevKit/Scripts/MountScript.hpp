@@ -9,7 +9,7 @@
 
 #include "Shell/Scripts/MountScriptBase.hpp"
 
-template<class T>
+template<typename T>
 class MountScript: public MountScriptBase
 {
 public:
@@ -59,14 +59,8 @@ private:
 
   struct Arguments
   {
-    Arguments() :
-      entry{nullptr},
-      help{false}
-    {
-    }
-
-    const char *entry;
-    bool help;
+    const char *entry{nullptr};
+    bool help{false};
 
     static void helpSetter(void *object, const char *)
     {

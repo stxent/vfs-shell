@@ -54,16 +54,9 @@ public:
 private:
   struct Arguments
   {
-    Arguments() :
-      src{nullptr},
-      dst{nullptr},
-      help{false}
-    {
-    }
-
-    const char *src;
-    const char *dst;
-    bool help;
+    const char *src{nullptr};
+    const char *dst{nullptr};
+    bool help{false};
 
     static void srcSetter(void *object, const char *argument)
     {

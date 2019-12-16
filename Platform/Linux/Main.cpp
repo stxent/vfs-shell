@@ -90,7 +90,7 @@ public:
   }
 
 private:
-  static constexpr size_t BUFFER_SIZE = 4096;
+  static constexpr size_t BUFFER_SIZE{4096};
 
   std::unique_ptr<Interface, std::function<void (Interface *)>> m_serial;
   std::unique_ptr<FsHandle, std::function<void (FsHandle *)>> m_filesystem;

@@ -25,7 +25,7 @@ public:
   virtual size_t write(const char *, size_t) override;
 
 private:
-  static constexpr size_t BUFFER_SIZE = 64;
+  static constexpr size_t BUFFER_SIZE{64};
 
   Interface *m_interface;
   std::list<Script *> m_subscribers;

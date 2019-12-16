@@ -13,12 +13,7 @@ void testArgumentCounter()
 {
   struct Arguments
   {
-    Arguments() :
-      counter{false}
-    {
-    }
-
-    size_t counter;
+    size_t counter{0};
 
     static void entryHandler(void *object, const char *)
     {
@@ -50,12 +45,7 @@ void testMixedArguments()
 {
   struct Arguments
   {
-    Arguments() :
-      counter{false}
-    {
-    }
-
-    size_t counter;
+    size_t counter{0};
 
     static void entryHandler(void *object, const char *)
     {
@@ -87,12 +77,7 @@ void testOptionalBool()
 {
   struct Arguments
   {
-    Arguments() :
-      option{false}
-    {
-    }
-
-    bool option;
+    bool option{false};
 
     static void optionSetter(void *object, const char *)
     {
@@ -123,12 +108,7 @@ void testOptionalInt()
 {
   struct Arguments
   {
-    Arguments() :
-      option{1} // Non-zero default value
-    {
-    }
-
-    int option;
+    int option{1}; // Non-zero default value
 
     static void optionSetter(void *object, const char *argument)
     {

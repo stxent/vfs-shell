@@ -40,8 +40,8 @@ public:
   }
 
 private:
-  static constexpr size_t ARGUMENT_COUNT  = 16;
-  static constexpr size_t RX_BUFFER       = 32;
+  static constexpr size_t ARGUMENT_COUNT{16};
+  static constexpr size_t RX_BUFFER{32};
 
   const char *m_executable;
   TerminalProxy m_terminal;

@@ -64,20 +64,13 @@ public:
   }
 
 private:
-  static constexpr uint32_t MAGIC_WORD = 0x3A84508FUL;
+  static constexpr uint32_t MAGIC_WORD{0x3A84508FUL};
 
   struct Arguments
   {
-    Arguments() :
-      halt{false},
-      help{false},
-      restart{false}
-    {
-    }
-
-    bool halt;
-    bool help;
-    bool restart;
+    bool halt{false};
+    bool help{false};
+    bool restart{false};
 
     static void haltSetter(void *object, const char *)
     {

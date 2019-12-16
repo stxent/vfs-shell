@@ -45,20 +45,11 @@ private:
 
   struct Arguments
   {
-    Arguments() :
-      nodeCount{0},
-      help{false},
-      humanReadable{false},
-      longListing{false},
-      showInodes{false}
-    {
-    }
-
-    size_t nodeCount;
-    bool help;
-    bool humanReadable;
-    bool longListing;
-    bool showInodes;
+    size_t nodeCount{0};
+    bool help{false};
+    bool humanReadable{false};
+    bool longListing{false};
+    bool showInodes{false};
 
     static void incrementNodeCount(void *object, const char *)
     {

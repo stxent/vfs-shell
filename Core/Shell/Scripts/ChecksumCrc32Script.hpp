@@ -50,16 +50,11 @@ public:
   }
 
 private:
-  static constexpr uint32_t INITIAL_CHECKSUM = 0;
+  static constexpr uint32_t INITIAL_CHECKSUM{0};
 
   struct Arguments
   {
-    Arguments() :
-      help{false}
-    {
-    }
-
-    bool help;
+    bool help{false};
 
     static void helpSetter(void *object, const char *)
     {

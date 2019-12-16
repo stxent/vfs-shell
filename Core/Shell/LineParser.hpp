@@ -53,7 +53,7 @@ public:
   }
 
 private:
-  static constexpr size_t MAX_LINE_LENGTH = 256;
+  static constexpr size_t MAX_LINE_LENGTH{256};
 
   Terminal &m_terminal;
   std::array<char, MAX_LINE_LENGTH> m_command;

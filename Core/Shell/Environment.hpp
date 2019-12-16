@@ -172,7 +172,7 @@ public:
       callback((*iter)->getName(), **iter);
   }
 
-  template<class T>
+  template<typename T>
   EnvironmentVariable &make(const char *name)
   {
     auto iter = find(name);

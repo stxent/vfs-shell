@@ -54,14 +54,8 @@ public:
 private:
   struct Arguments
   {
-    Arguments() :
-      path{nullptr},
-      help{false}
-    {
-    }
-
-    const char *path;
-    bool help;
+    const char *path{nullptr};
+    bool help{false};
 
     static void pathSetter(void *object, const char *argument)
     {

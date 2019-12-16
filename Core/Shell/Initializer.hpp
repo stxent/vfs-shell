@@ -49,7 +49,7 @@ public:
     fsNodeFree(binEntryNode);
   }
 
-  template<class T, class... ARGs>
+  template<typename T, typename... ARGs>
   void attach(ARGs... args)
   {
     FsNode * const binEntryNode = ShellHelpers::openNode(fs(), env()["PATH"]);

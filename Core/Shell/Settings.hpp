@@ -11,8 +11,8 @@
 
 namespace Settings {
 
-static constexpr size_t ENTRY_NAME_LENGTH = 128;
-static constexpr size_t PWD_LENGTH        = 256;
+static constexpr size_t ENTRY_NAME_LENGTH{128};
+static constexpr size_t PWD_LENGTH{256};
 
 }
 

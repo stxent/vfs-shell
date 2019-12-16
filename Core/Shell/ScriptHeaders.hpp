@@ -16,11 +16,11 @@ struct ScriptHeaders
   ScriptHeaders(const ScriptHeaders &) = delete;
   ScriptHeaders &operator=(const ScriptHeaders &) = delete;
 
-  static constexpr size_t MAX_HEADER_SIZE = 4;
+  static constexpr size_t MAX_HEADER_SIZE{4};
 
-  static constexpr size_t OBJECT_HEADER_SIZE = 4;
+  static constexpr size_t OBJECT_HEADER_SIZE{4};
   static const uint8_t OBJECT_HEADER[OBJECT_HEADER_SIZE];
-  static constexpr size_t SCRIPT_HEADER_SIZE = 2;
+  static constexpr size_t SCRIPT_HEADER_SIZE{2};
   static const uint8_t SCRIPT_HEADER[SCRIPT_HEADER_SIZE];
 };
 

@@ -30,7 +30,7 @@ Result DataReader::onEventReceived(const ScriptEvent *event)
 
 bool DataReader::isTerminateRequested()
 {
-  static constexpr size_t RX_BUFFER = 16;
+  static constexpr size_t RX_BUFFER{16};
 
   while (m_semaphore.tryWait())
   {

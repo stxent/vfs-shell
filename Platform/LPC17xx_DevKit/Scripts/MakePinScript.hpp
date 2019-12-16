@@ -57,22 +57,12 @@ public:
 private:
   struct Arguments
   {
-    Arguments() :
-      path{nullptr},
-      pin{-1},
-      port{-1},
-      help{false},
-      output{false},
-      value{false}
-    {
-    }
-
-    const char *path;
-    long pin;
-    long port;
-    bool help;
-    bool output;
-    bool value;
+    const char *path{nullptr};
+    long pin{-1};
+    long port{-1};
+    bool help{false};
+    bool output{false};
+    bool value{false};
 
     static void pathSetter(void *object, const char *argument)
     {

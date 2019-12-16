@@ -24,16 +24,9 @@ public:
 private:
   struct Arguments
   {
-    Arguments() :
-      alarm{nullptr},
-      time{nullptr},
-      help{false}
-    {
-    }
-
-    const char *alarm;
-    const char *time;
-    bool help;
+    const char *alarm{nullptr};
+    const char *time{nullptr};
+    bool help{false};
 
     static void alarmSetter(void *object, const char *argument)
     {

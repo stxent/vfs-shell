@@ -72,14 +72,14 @@ static void enableClock()
 class Application
 {
 private:
-  static constexpr PinNumber DISPLAY_CS     = PIN(2, 8);
-  static constexpr PinNumber DISPLAY_RESET  = PIN(1, 4);
-  static constexpr PinNumber DISPLAY_RS     = PIN(1, 14);
+  static constexpr PinNumber DISPLAY_CS{PIN(2, 8)};
+  static constexpr PinNumber DISPLAY_RESET{PIN(1, 4)};
+  static constexpr PinNumber DISPLAY_RS{PIN(1, 14)};
 
-  static constexpr PinNumber LED_B          = PIN(1, 8);
-  static constexpr PinNumber LED_G          = PIN(1, 9);
-  static constexpr PinNumber LED_R          = PIN(1, 10);
-  static constexpr PinNumber SDIO_CS_PIN    = PIN(0, 22);
+  static constexpr PinNumber LED_B{PIN(1, 8)};
+  static constexpr PinNumber LED_G{PIN(1, 9)};
+  static constexpr PinNumber LED_R{PIN(1, 10)};
+  static constexpr PinNumber SDIO_CS_PIN{PIN(0, 22)};
 
   static const BodConfig s_bodConfig;
   static const MemoryBusDmaConfig s_displayBusConfig;
@@ -148,7 +148,7 @@ public:
   }
 
 private:
-  static constexpr size_t BUFFER_SIZE = 2048;
+  static constexpr size_t BUFFER_SIZE{2048};
 
   std::unique_ptr<Interrupt, std::function<void (Interrupt *)>> m_bod;
   std::unique_ptr<Interface, std::function<void (Interface *)>> m_displayBus;

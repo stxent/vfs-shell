@@ -81,8 +81,8 @@ struct ParamExtractor<OFFSET, BASE, T, ARGs...>
 {
   static size_t serialize(const BASE &input, char *output, size_t length)
   {
-    static constexpr size_t PREFIX_LENGTH = OFFSET > 0 ? 1 : 0;
-    static constexpr size_t MAX_VALUE_LENGTH = TerminalHelpers::serializedValueLength<T>();
+    static constexpr size_t PREFIX_LENGTH{OFFSET > 0 ? 1 : 0};
+    static constexpr size_t MAX_VALUE_LENGTH{TerminalHelpers::serializedValueLength<T>()};
 
     if (PREFIX_LENGTH + MAX_VALUE_LENGTH <= length)
     {
@@ -106,7 +106,7 @@ template<typename U, U ID, typename T, typename... Ts>
 struct ParamDesc
 {
   using Type = T;
-  static constexpr U id = ID;
+  static constexpr U id{ID};
 
   static constexpr const char *name()
   {
@@ -152,11 +152,11 @@ private:
   }
 };
 
-template<class T>
+template<typename T>
 class InterfaceParamNode: public VfsNode
 {
   using Type = typename T::Type;
-  static constexpr FsLength TYPE_LENGTH = static_cast<FsLength>(sizeof(Type));
+  static constexpr FsLength TYPE_LENGTH{static_cast<FsLength>(sizeof(Type))};
 
 public:
   InterfaceParamNode(const char *name, Interface *interface,

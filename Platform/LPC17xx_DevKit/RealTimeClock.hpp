@@ -64,7 +64,7 @@ public:
   }
 
 private:
-  static constexpr time64_t PERIOD = static_cast<time64_t>(std::numeric_limits<uint32_t>::max());
+  static constexpr auto PERIOD{static_cast<time64_t>(std::numeric_limits<uint32_t>::max())};
 
   static void clockDeleter(RtClock *pointer)
   {
