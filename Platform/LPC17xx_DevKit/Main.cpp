@@ -50,6 +50,7 @@
 #include "Scripts/MakeDacScript.hpp"
 #include "Scripts/MakePinScript.hpp"
 #include "Scripts/MountScript.hpp"
+#include "Scripts/RtcUtilScript.hpp"
 #include "Scripts/ShutdownScript.hpp"
 #include "RealTimeClock.hpp"
 
@@ -139,6 +140,7 @@ public:
     m_initializer.attach<PrintHexDataScript<BUFFER_SIZE>>();
     m_initializer.attach<PrintRawDataScript<BUFFER_SIZE>>();
     m_initializer.attach<RemoveNodesScript>();
+    m_initializer.attach<RtcUtilScript<RealTimeClock>>(&RealTimeClock::instance());
     m_initializer.attach<SetEnvScript>();
     m_initializer.attach<Shell>();
     m_initializer.attach<ShutdownScript>();

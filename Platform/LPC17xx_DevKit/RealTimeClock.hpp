@@ -57,6 +57,11 @@ public:
       return E_VALUE;
   }
 
+  time64_t getRawTime()
+  {
+    return rtTime(m_realtime.get()) * 1000000;
+  }
+
   static RealTimeClock &instance()
   {
     static RealTimeClock object;
