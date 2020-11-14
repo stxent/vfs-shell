@@ -7,11 +7,11 @@
 #ifndef VFS_SHELL_CORE_SHELL_EVALUATOR_HPP_
 #define VFS_SHELL_CORE_SHELL_EVALUATOR_HPP_
 
-#include <memory>
-#include <type_traits>
 #include "Shell/Script.hpp"
 #include "Shell/ShellHelpers.hpp"
 #include "Shell/TerminalProxy.hpp"
+#include <memory>
+#include <type_traits>
 
 template<typename T>
 class Evaluator: public Script

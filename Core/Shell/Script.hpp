@@ -7,15 +7,15 @@
 #ifndef VFS_SHELL_CORE_SHELL_SCRIPT_HPP_
 #define VFS_SHELL_CORE_SHELL_SCRIPT_HPP_
 
+#include "Shell/Environment.hpp"
+#include "Shell/Terminal.hpp"
+#include "Shell/TimeProvider.hpp"
+#include <xcore/error.h>
+#include <xcore/fs/fs.h>
 #include <memory>
 #include <tuple>
 #include <utility>
 #include <vector>
-#include <xcore/error.h>
-#include <xcore/fs.h>
-#include "Shell/Environment.hpp"
-#include "Shell/Terminal.hpp"
-#include "Shell/TimeProvider.hpp"
 
 struct ScriptEvent
 {

@@ -11,6 +11,7 @@
 #include "Shell/Settings.hpp"
 #include "Shell/ShellHelpers.hpp"
 #include "Shell/ShellScript.hpp"
+#include <xcore/fs/utils.h>
 
 class MakePinScript: public ShellScript
 {
@@ -94,17 +95,17 @@ private:
   Result makePin(const char *path, long port, long pin, bool output, bool value)
   {
     char absolutePath[Settings::PWD_LENGTH];
-    ShellHelpers::joinPaths(absolutePath, env()["PWD"], path);
+    fsJoinPaths(absolutePath, env()["PWD"], path);
 
     // Check node existence
-    FsNode * const existingNode = ShellHelpers::openNode(fs(), absolutePath);
+    FsNode * const existingNode = fsOpenNode(fs(), absolutePath);
     if (existingNode != nullptr)
     {
       fsNodeFree(existingNode);
       return E_EXIST;
     }
 
-    FsNode * const root = ShellHelpers::openBaseNode(fs(), absolutePath);
+    FsNode * const root = fsOpenBaseNode(fs(), absolutePath);
 
     if (root != nullptr)
     {
@@ -113,9 +114,9 @@ private:
 
       // Initialize pin as output or input depending on the arguments of the command
       if (output)
-        entry = new PinNode{ShellHelpers::extractName(path), port, pin, value, time().getTime()};
+        entry = new PinNode{fsExtractName(path), port, pin, value, time().getTime()};
       else
-        entry = new PinNode{ShellHelpers::extractName(path), port, pin, time().getTime()};
+        entry = new PinNode{fsExtractName(path), port, pin, time().getTime()};
 
       // Link VFS node to the existing file tree
       const FsFieldDescriptor fields[] = {

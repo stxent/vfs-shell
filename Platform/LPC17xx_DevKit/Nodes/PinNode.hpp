@@ -7,8 +7,8 @@
 #ifndef VFS_SHELL_PLATFORM_LPC17XX_DEVKIT_NODES_PINNODE_HPP_
 #define VFS_SHELL_PLATFORM_LPC17XX_DEVKIT_NODES_PINNODE_HPP_
 
-#include <halm/pin.h>
 #include "Vfs/Vfs.hpp"
+#include <halm/pin.h>
 
 class PinNode: public VfsNode
 {

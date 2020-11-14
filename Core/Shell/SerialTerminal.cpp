@@ -4,11 +4,12 @@
  * Project is distributed under the terms of the GNU General Public License v3.0
  */
 
-#include <algorithm>
 #include "Shell/Script.hpp"
 #include "Shell/SerialTerminal.hpp"
+#include <algorithm>
 
-SerialTerminal::SerialTerminal(Interface *interface) :
+SerialTerminal::SerialTerminal(Interface *interface, bool coloration) :
+  Terminal{coloration},
   m_interface{interface}
 {
   ifSetCallback(m_interface, dataCallbackHelper, this);

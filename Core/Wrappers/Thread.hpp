@@ -12,6 +12,4 @@ namespace Osw
 #include <osw/thread.h>
 }
 
-
-
 #endif // VFS_SHELL_WRAPPERS_THREAD_HPP_

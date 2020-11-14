@@ -4,20 +4,15 @@
  * Project is distributed under the terms of the GNU General Public License v3.0
  */
 
-#include <cassert>
-
-#include <halm/core/cortex/nvic.h>
-#include <halm/generic/sdio_spi.h>
-#include <halm/pin.h>
-#include <halm/platform/nxp/bod.h>
-#include <halm/platform/nxp/gptimer.h>
-#include <halm/platform/nxp/lpc17xx/clocking.h>
-#include <halm/platform/nxp/serial.h>
-#include <halm/platform/nxp/spi_dma.h>
-#include <halm/pm.h>
-#include <dpm/drivers/displays/display.h>
-#include <dpm/drivers/displays/s6d1121.h>
-#include <dpm/drivers/platform/nxp/memory_bus_dma.h>
+#include "CardBuilder.hpp"
+#include "InterfaceWrapper.hpp"
+#include "RealTimeClock.hpp"
+#include "Scripts/CpuFrequencyScript.hpp"
+#include "Scripts/MakeDacScript.hpp"
+#include "Scripts/MakePinScript.hpp"
+#include "Scripts/MountScript.hpp"
+#include "Scripts/RtcUtilScript.hpp"
+#include "Scripts/ShutdownScript.hpp"
 
 #include "Shell/Initializer.hpp"
 #include "Shell/Interfaces/InterfaceNode.hpp"
@@ -44,15 +39,22 @@
 #include "Shell/SerialTerminal.hpp"
 #include "Vfs/VfsHandle.hpp"
 
-#include "CardBuilder.hpp"
-#include "InterfaceWrapper.hpp"
-#include "Scripts/CpuFrequencyScript.hpp"
-#include "Scripts/MakeDacScript.hpp"
-#include "Scripts/MakePinScript.hpp"
-#include "Scripts/MountScript.hpp"
-#include "Scripts/RtcUtilScript.hpp"
-#include "Scripts/ShutdownScript.hpp"
-#include "RealTimeClock.hpp"
+#include <halm/core/cortex/nvic.h>
+#include <halm/generic/sdio_spi.h>
+#include <halm/pin.h>
+#include <halm/platform/nxp/bod.h>
+#include <halm/platform/nxp/gptimer.h>
+#include <halm/platform/nxp/i2c.h>
+#include <halm/platform/nxp/lpc17xx/clocking.h>
+#include <halm/platform/nxp/serial.h>
+#include <halm/platform/nxp/spi_dma.h>
+#include <halm/pm.h>
+#include <dpm/drivers/displays/display.h>
+#include <dpm/drivers/displays/s6d1121.h>
+#include <dpm/drivers/platform/nxp/memory_bus_dma.h>
+#include <xcore/fs/utils.h>
+
+#include <cassert>
 
 static void enableClock()
 {
@@ -85,6 +87,7 @@ private:
   static const BodConfig s_bodConfig;
   static const MemoryBusDmaConfig s_displayBusConfig;
   static const PinNumber s_displayBusPins[];
+  static const I2CConfig s_i2cConfig;
   static const GpTimerConfig s_sdioTimerConfig;
   static const SerialConfig s_serialConfig;
   static const SpiDmaConfig s_spiConfig;
@@ -99,6 +102,7 @@ public:
     m_bod{static_cast<Interrupt *>(init(Bod, &s_bodConfig)), [](Interrupt *pointer){ deinit(pointer); }},
     m_displayBus{static_cast<Interface *>(init(MemoryBusDma, &s_displayBusConfig)), interfaceDeleter},
     m_display{makeDisplayInterface(m_displayBus.get()), interfaceDeleter},
+    m_i2c{static_cast<Interface *>(init(I2C, &s_i2cConfig)), interfaceDeleter},
     m_serial{static_cast<Interface *>(init(Serial, &s_serialConfig)), interfaceDeleter},
     m_spi{static_cast<Interface *>(init(SpiDma, &s_spiConfig)), interfaceDeleter},
     m_sdioTimer{static_cast<Timer *>(init(GpTimer, &s_sdioTimerConfig)), [](Timer *pointer){ deinit(pointer); }},
@@ -155,6 +159,7 @@ private:
   std::unique_ptr<Interrupt, std::function<void (Interrupt *)>> m_bod;
   std::unique_ptr<Interface, std::function<void (Interface *)>> m_displayBus;
   std::unique_ptr<Interface, std::function<void (Interface *)>> m_display;
+  std::unique_ptr<Interface, std::function<void (Interface *)>> m_i2c;
   std::unique_ptr<Interface, std::function<void (Interface *)>> m_serial;
   std::unique_ptr<Interface, std::function<void (Interface *)>> m_spi;
   std::unique_ptr<Timer, std::function<void (Timer *)>> m_sdioTimer;
@@ -200,7 +205,7 @@ private:
         >("serial", m_serial.get(), RealTimeClock::instance().getTime())
     };
 
-    parent = ShellHelpers::openNode(m_filesystem.get(), "/dev");
+    parent = fsOpenNode(m_filesystem.get(), "/dev");
     for (auto iter = std::begin(deviceEntries); iter != std::end(deviceEntries); ++iter)
     {
       const FsFieldDescriptor entryFields[] = {
@@ -224,7 +229,7 @@ private:
 
   static Interface *makeSdioInterface(Interface *spi, Timer *timer, PinNumber cs)
   {
-    const SdioSpiConfig config{spi, timer, 0, cs};
+    const SdioSpiConfig config{spi, timer, nullptr, 0, cs};
     return static_cast<Interface *>(init(SdioSpi, &config));
   }
 
@@ -252,12 +257,14 @@ const MemoryBusDmaConfig Application::s_displayBusConfig = {
         PIN(1, 25), // trailing
         1,          // channel
         0,          // dma
-        true        // inversion
+        false,      // inversion
+        false       // swap
     },
 
     // control
     {
         PIN(1, 26), // capture
+        0,          // select
         PIN(1, 28), // leading
         PIN(1, 29), // trailing
         0,          // channel
@@ -272,6 +279,14 @@ const PinNumber Application::s_displayBusPins[] = {
     0
 };
 
+const I2CConfig Application::s_i2cConfig = {
+    400000,     // rate
+    PIN(0, 11), // scl
+    PIN(0, 10), // sda
+    0,          // priority
+    2           // channel
+};
+
 const GpTimerConfig Application::s_sdioTimerConfig = {
     100000,             // frequency
     GPTIMER_MATCH_AUTO, // event
@@ -284,10 +299,10 @@ const SerialConfig Application::s_serialConfig = {
     128,                // rxLength
     4096,               // txLength
     SERIAL_PARITY_NONE, // parity
-    PIN(4, 29),         // rx
-    PIN(4, 28),         // tx
+    PIN(0, 3),          // rx
+    PIN(0, 2),          // tx
     0,                  // priority
-    3                   // channel
+    0                   // channel
 };
 
 const SpiDmaConfig Application::s_spiConfig = {

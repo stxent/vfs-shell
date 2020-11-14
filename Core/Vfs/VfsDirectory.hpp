@@ -7,8 +7,8 @@
 #ifndef VFS_SHELL_CORE_VFS_VFSDIRECTORY_HPP_
 #define VFS_SHELL_CORE_VFS_VFSDIRECTORY_HPP_
 
-#include <list>
 #include "Vfs/Vfs.hpp"
+#include <list>
 
 class VfsHandle;
 

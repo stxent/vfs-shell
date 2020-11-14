@@ -7,10 +7,10 @@
 #ifndef VFS_SHELL_CORE_SHELL_SCRIPTS_DISPLAYTESTSCRIPT_HPP_
 #define VFS_SHELL_CORE_SHELL_SCRIPTS_DISPLAYTESTSCRIPT_HPP_
 
-#include <algorithm>
-#include <xcore/memory.h>
 #include "Shell/ArgParser.hpp"
 #include "Shell/Scripts/DataReader.hpp"
+#include <xcore/memory.h>
+#include <algorithm>
 
 template<size_t BUFFER_SIZE>
 class DisplayTestScript: public DataReader

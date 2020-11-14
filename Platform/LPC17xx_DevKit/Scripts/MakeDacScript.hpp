@@ -11,6 +11,7 @@
 #include "Shell/Settings.hpp"
 #include "Shell/ShellHelpers.hpp"
 #include "Shell/ShellScript.hpp"
+#include <xcore/fs/utils.h>
 
 class MakeDacScript: public ShellScript
 {
@@ -71,22 +72,22 @@ private:
   Result makeDac(const char *path)
   {
     char absolutePath[Settings::PWD_LENGTH];
-    ShellHelpers::joinPaths(absolutePath, env()["PWD"], path);
+    fsJoinPaths(absolutePath, env()["PWD"], path);
 
     // Check node existence
-    FsNode * const existingNode = ShellHelpers::openNode(fs(), absolutePath);
+    FsNode * const existingNode = fsOpenNode(fs(), absolutePath);
     if (existingNode != nullptr)
     {
       fsNodeFree(existingNode);
       return E_EXIST;
     }
 
-    FsNode * const root = ShellHelpers::openBaseNode(fs(), absolutePath);
+    FsNode * const root = fsOpenBaseNode(fs(), absolutePath);
 
     if (root != nullptr)
     {
       // Create VFS node
-      VfsNode * const entry = new DacNode{ShellHelpers::extractName(path), time().getTime()};
+      VfsNode * const entry = new DacNode{fsExtractName(path), time().getTime()};
 
       // Link VFS node to the existing file tree
       const FsFieldDescriptor fields[] = {

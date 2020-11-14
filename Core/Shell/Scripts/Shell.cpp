@@ -4,11 +4,11 @@
  * Project is distributed under the terms of the GNU General Public License v3.0
  */
 
-#include <iterator>
 #include "Shell/ArgParser.hpp"
 #include "Shell/Evaluator.hpp"
 #include "Shell/Scripts/Shell.hpp"
 #include "Shell/ShellHelpers.hpp"
+#include <iterator>
 
 Shell::Shell(Script *parent, ArgumentIterator firstArgument, ArgumentIterator lastArgument) :
   ShellScript{parent, firstArgument, lastArgument},

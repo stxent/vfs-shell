@@ -8,6 +8,7 @@
 #include "Shell/Scripts/RemoveNodesScript.hpp"
 #include "Shell/Settings.hpp"
 #include "Shell/ShellHelpers.hpp"
+#include <xcore/fs/utils.h>
 
 RemoveNodesScript::RemoveNodesScript(Script *parent, ArgumentIterator firstArgument, ArgumentIterator lastArgument) :
   ShellScript{parent, firstArgument, lastArgument},
@@ -45,15 +46,15 @@ void RemoveNodesScript::removeNode(const char *positionalArgument, bool recursiv
     return;
 
   char absolutePath[Settings::PWD_LENGTH];
-  ShellHelpers::joinPaths(absolutePath, env()["PWD"], positionalArgument);
+  fsJoinPaths(absolutePath, env()["PWD"], positionalArgument);
 
-  FsNode * const node = ShellHelpers::openNode(fs(), absolutePath);
+  FsNode * const node = fsOpenNode(fs(), absolutePath);
   if (node != nullptr)
   {
     // TODO Remove directories recursively
     if (recursive || fsNodeLength(node, FS_NODE_DATA, nullptr) == E_OK)
     {
-      FsNode * const root = ShellHelpers::openBaseNode(fs(), absolutePath);
+      FsNode * const root = fsOpenBaseNode(fs(), absolutePath);
       if (root != nullptr)
       {
         m_result = fsNodeRemove(root, node);

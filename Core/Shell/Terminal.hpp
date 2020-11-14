@@ -7,12 +7,12 @@
 #ifndef VFS_SHELL_CORE_SHELL_TERMINAL_HPP_
 #define VFS_SHELL_CORE_SHELL_TERMINAL_HPP_
 
+#include "Shell/TerminalHelpers.hpp"
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
 #include <limits>
 #include <type_traits>
-#include "Shell/TerminalHelpers.hpp"
 
 class Script;
 
@@ -37,10 +37,11 @@ public:
   virtual size_t read(char *, size_t) = 0;
   virtual size_t write(const char *, size_t) = 0;
 
-  Terminal() :
+  Terminal(bool coloration = false) :
     m_fill{' '},
     m_format{Format::DEC},
-    m_width{1}
+    m_width{1},
+    m_coloration{coloration}
   {
   }
 
@@ -80,6 +81,7 @@ private:
   Fill m_fill;
   Format m_format;
   Width m_width;
+  bool m_coloration;
 
   void setFill(Fill value)
   {

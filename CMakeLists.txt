@@ -2,12 +2,9 @@
 # Project is distributed under the terms of the GNU General Public License v3.0
 
 project(Shell CXX)
-cmake_minimum_required(VERSION 3.6)
+cmake_minimum_required(VERSION 3.13)
 cmake_policy(SET CMP0054 NEW)
-
-if(NOT CMAKE_BUILD_TYPE)
-    set(CMAKE_BUILD_TYPE Debug CACHE STRING "The type of build: Debug Release RelWithDebInfo MinSizeRel." FORCE)
-endif()
+cmake_policy(SET CMP0069 NEW)
 
 option(BUILD_TESTS "Build tests." OFF)
 option(USE_LTO "Enable Link Time Optimization." OFF)
@@ -20,39 +17,45 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${FLAGS_DEFAULT}")
 set(CMAKE_SHARED_LIBRARY_LINK_CXX_FLAGS "")
 
-if(${USE_LTO})
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -flto -ffat-lto-objects")
+if(${BUILD_TESTS})
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} --coverage")
 endif()
 
-include_directories(SYSTEM
-        "Libs/xcore/include"
-        "Libs/halm/include"
-        "Libs/dpm/include"
-        "Libs/osw/include"
-        "Libs/yaf/include"
-)
+if(${USE_LTO})
+    set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
+    if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+        set(CMAKE_CXX_COMPILE_OPTIONS_IPO -flto -ffat-lto-objects)
+    endif()
+endif()
+
+# Configure XCORE library
+set(FS_NAME_LENGTH 256 CACHE INTERNAL "Filesystem name length" FORCE)
+add_subdirectory(Libs/xcore xcore)
+
+# Configure OSW library
+add_subdirectory(Libs/osw osw)
+
+# Configure HALM library, CONFIG_FILE should be defined
+set(HALM_CONFIG_FILE "${PROJECT_SOURCE_DIR}/Platform/${BOARD}/Halm.config" CACHE INTERNAL "Path to the library configuration file" FORCE)
+add_subdirectory(Libs/halm halm)
+
+# Configure YAF library
+set(YAF_CONFIG_THREADS OFF CACHE INTERNAL "Disable threads" FORCE)
+add_subdirectory(Libs/yaf yaf)
+
+# Configure DPM library
+add_subdirectory(Libs/dpm dpm)
 
 include("Core/CMakeLists.txt")
 include("Platform/CMakeLists.txt")
 
-# Setup symbols for library headers
-string(TOLOWER ${CMAKE_SYSTEM_NAME} OS_TYPE)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DOS_TYPE=${OS_TYPE}")
-
-if(DEFINED CMAKE_SYSTEM_SOC)
-    string(TOUPPER "${CMAKE_SYSTEM_SOC}" HALM_PLATFORM)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D${HALM_PLATFORM}")
-endif()
-
-# Setup libraries, script should be included after Core and Platform scripts
-include("Libs/CMakeLists.txt")
-
 # Configure executable
-add_executable(${PROJECT_NAME} ${CORE_SOURCES} ${PLATFORM_SOURCES})
-add_dependencies(${PROJECT_NAME} yaf osw dpm halm xcore)
-target_link_libraries(${PROJECT_NAME} ${PLATFORM_LIBS})
+add_executable(${PROJECT_NAME} ${CORE_SOURCES} ${BOARD_SOURCES})
+target_link_libraries(${PROJECT_NAME} PRIVATE dpm osw yaf)
 
 if(${BUILD_TESTS})
+    target_link_libraries(${PROJECT_NAME} PRIVATE gcov)
+
     enable_testing()
     add_subdirectory(Tests)
 endif()

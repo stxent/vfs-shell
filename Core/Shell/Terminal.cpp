@@ -4,8 +4,8 @@
  * Project is distributed under the terms of the GNU General Public License v3.0
  */
 
-#include <cstring>
 #include "Shell/Terminal.hpp"
+#include <cstring>
 
 Terminal &operator<<(Terminal &output, short value)
 {
@@ -61,11 +61,14 @@ Terminal &operator<<(Terminal &output, char buffer)
 
 Terminal &operator<<(Terminal &output, Terminal::Color value)
 {
-  const char high = value == Terminal::Color::WHITE ? '9' : '3';
-  const char low = static_cast<char>('0' + static_cast<int>(value));
+  if (output.m_coloration)
+  {
+    const char high = value == Terminal::Color::WHITE ? '9' : '3';
+    const char low = static_cast<char>('0' + static_cast<int>(value));
 
-  const char buffer[] = {'\033', '[', high, low, 'm'};
-  output.write(buffer, sizeof(buffer));
+    const char buffer[] = {'\033', '[', high, low, 'm'};
+    output.write(buffer, sizeof(buffer));
+  }
 
   return output;
 }
@@ -79,11 +82,13 @@ Terminal &operator<<(Terminal &output, Terminal::Control value)
       break;
 
     case Terminal::Control::REGULAR:
-      output.write("\033[22m", 5);
+      if (output.m_coloration)
+        output.write("\033[22m", 5);
       break;
 
     case Terminal::Control::BOLD:
-      output.write("\033[1m", 4);
+      if (output.m_coloration)
+        output.write("\033[1m", 4);
       break;
   }
 

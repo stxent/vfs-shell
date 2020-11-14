@@ -7,9 +7,9 @@
 #ifndef VFS_SHELL_CORE_SHELL_SCRIPTS_LISTNODESSCRIPT_HPP_
 #define VFS_SHELL_CORE_SHELL_SCRIPTS_LISTNODESSCRIPT_HPP_
 
-#include <array>
 #include "Shell/ArgParser.hpp"
 #include "Shell/ShellScript.hpp"
+#include <array>
 
 class ListNodesScript: public ShellScript
 {

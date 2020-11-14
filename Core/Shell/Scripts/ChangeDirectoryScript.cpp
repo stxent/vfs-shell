@@ -4,11 +4,12 @@
  * Project is distributed under the terms of the GNU General Public License v3.0
  */
 
-#include <iterator>
 #include "Shell/ArgParser.hpp"
 #include "Shell/Scripts/ChangeDirectoryScript.hpp"
 #include "Shell/ShellHelpers.hpp"
 #include "Shell/Settings.hpp"
+#include <xcore/fs/utils.h>
+#include <iterator>
 
 ChangeDirectoryScript::ChangeDirectoryScript(Script *parent, ArgumentIterator firstArgument,
     ArgumentIterator lastArgument) :
@@ -46,8 +47,8 @@ Result ChangeDirectoryScript::changeDirectory(const char *relativePath)
 {
   char path[Settings::PWD_LENGTH];
 
-  ShellHelpers::joinPaths(path, env()["PWD"], relativePath);
-  FsNode * const root = ShellHelpers::openNode(fs(), path);
+  fsJoinPaths(path, env()["PWD"], relativePath);
+  FsNode * const root = fsOpenNode(fs(), path);
   if (root == nullptr)
   {
     tty() << name() << ": " << relativePath << ": no such node" << Terminal::EOL;

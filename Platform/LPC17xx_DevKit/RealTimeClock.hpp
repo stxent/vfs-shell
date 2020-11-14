@@ -7,12 +7,12 @@
 #ifndef VFS_SHELL_PLATFORM_LPC17XX_DEVKIT_ENTRIES_REALTIMECLOCK_HPP_
 #define VFS_SHELL_PLATFORM_LPC17XX_DEVKIT_ENTRIES_REALTIMECLOCK_HPP_
 
+#include "Shell/TimeProvider.hpp"
+#include <halm/platform/nxp/gptimer.h>
+#include <halm/platform/nxp/rtc.h>
 #include <functional>
 #include <limits>
 #include <memory>
-#include <halm/platform/nxp/gptimer.h>
-#include <halm/platform/nxp/rtc.h>
-#include "Shell/TimeProvider.hpp"
 
 class RealTimeClock: public TimeProvider
 {
@@ -62,6 +62,20 @@ public:
     return rtTime(m_realtime.get()) * 1000000;
   }
 
+  void setCallback(std::function<void ()> callback)
+  {
+    if (callback)
+    {
+      m_callback = callback;
+      rtSetCallback(m_realtime.get(), onTimerAlarm, this);
+    }
+    else
+    {
+      rtSetCallback(m_realtime.get(), nullptr, nullptr);
+      m_callback = nullptr;
+    }
+  }
+
   static RealTimeClock &instance()
   {
     static RealTimeClock object;
@@ -79,9 +93,15 @@ private:
   RealTimeClock() :
     m_monotonic{static_cast<Timer *>(init(GpTimer, &s_monotonicTimerConfig)), [](Timer *pointer){ deinit(pointer); }},
     m_realtime{static_cast<RtClock *>(init(Rtc, &s_realtimeClockConfig)), clockDeleter},
+    m_callback{},
     m_tick{rtTime(m_realtime.get()) * 1000000}
   {
     timerEnable(m_monotonic.get());
+  }
+
+  static void onTimerAlarm(void *argument)
+  {
+    static_cast<RealTimeClock *>(argument)->m_callback();
   }
 
   static void onTimerOverflow(void *argument)
@@ -91,6 +111,7 @@ private:
 
   std::unique_ptr<Timer, std::function<void (Timer *)>> m_monotonic;
   std::unique_ptr<RtClock, std::function<void (RtClock *)>> m_realtime;
+  std::function<void ()> m_callback;
   time64_t m_tick;
 
   static const GpTimerConfig s_monotonicTimerConfig;

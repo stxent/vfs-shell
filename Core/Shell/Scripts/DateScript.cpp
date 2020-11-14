@@ -4,9 +4,9 @@
  * Project is distributed under the terms of the GNU General Public License v3.0
  */
 
-#include <iterator>
 #include "Shell/ArgParser.hpp"
 #include "Shell/Scripts/DateScript.hpp"
+#include <iterator>
 
 DateScript::DateScript(Script *parent, ArgumentIterator firstArgument, ArgumentIterator lastArgument) :
   ShellScript{parent, firstArgument, lastArgument}

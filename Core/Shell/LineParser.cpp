@@ -4,9 +4,9 @@
  * Project is distributed under the terms of the GNU General Public License v3.0
  */
 
-#include <algorithm>
 #include "Shell/LineParser.hpp"
 #include "Shell/Terminal.hpp"
+#include <algorithm>
 
 LineParser::LineParser(Terminal &terminal, bool echo) :
   m_terminal{terminal},

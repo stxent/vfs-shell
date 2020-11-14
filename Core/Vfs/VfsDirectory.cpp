@@ -4,11 +4,11 @@
  * Project is distributed under the terms of the GNU General Public License v3.0
  */
 
-#include <algorithm>
-#include <cstring> // TODO
 #include "Vfs/VfsDataNode.hpp"
 #include "Vfs/VfsDirectory.hpp"
 #include "Vfs/VfsHandle.hpp"
+#include <algorithm>
+#include <cstring> // TODO
 
 VfsDirectory::VfsDirectory(const char *name, time64_t timestamp, FsAccess access) :
   VfsNode{name, timestamp, access}

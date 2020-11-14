@@ -36,7 +36,7 @@ Result VfsDataNode::length(FsFieldType type, FsLength *fieldLength)
   }
 }
 
-Result VfsDataNode::read(FsFieldType type, FsLength position, void *buffer, size_t bufferLength, size_t *bytesRead)
+Result VfsDataNode::read(FsFieldType type, FsLength position, void *buffer, size_t length, size_t *read)
 {
   switch (type)
   {
@@ -44,13 +44,12 @@ Result VfsDataNode::read(FsFieldType type, FsLength position, void *buffer, size
     {
       if (position <= static_cast<FsLength>(m_dataLength))
       {
-        const size_t chunkLength = static_cast<size_t>(std::min(static_cast<FsLength>(m_dataLength) - position,
-            static_cast<FsLength>(bufferLength)));
+        const size_t remaining = static_cast<size_t>(static_cast<FsLength>(m_dataLength) - position);
+        const size_t chunk = MIN(remaining, length);
 
-        std::copy(m_dataBuffer.get() + position, m_dataBuffer.get() + position + chunkLength,
-            static_cast<uint8_t *>(buffer));
-        if (bytesRead != nullptr)
-          *bytesRead = chunkLength;
+        std::copy(m_dataBuffer.get() + position, m_dataBuffer.get() + position + chunk, static_cast<uint8_t *>(buffer));
+        if (read)
+          *read = chunk;
         return E_OK;
       }
       else
@@ -58,54 +57,61 @@ Result VfsDataNode::read(FsFieldType type, FsLength position, void *buffer, size
     }
 
     default:
-      return VfsNode::read(type, position, buffer, bufferLength, bytesRead);
+      return VfsNode::read(type, position, buffer, length, read);
   }
 }
 
-Result VfsDataNode::write(FsFieldType type, FsLength position, const void *buffer, size_t bufferLength,
-    size_t *bytesWritten)
+Result VfsDataNode::write(FsFieldType type, FsLength position, const void *buffer, size_t length, size_t *written)
 {
   switch (type)
   {
     case FS_NODE_DATA:
-      return writeData(position, buffer, bufferLength, bytesWritten);
+      return writeDataBuffer(position, buffer, length, written);
 
     default:
-      return VfsNode::write(type, position, buffer, bufferLength, bytesWritten);
+      return VfsNode::write(type, position, buffer, length, written);
   }
 }
 
-void VfsDataNode::reallocateDataBuffer(size_t desiredSize)
+bool VfsDataNode::reallocateDataBuffer(size_t length)
 {
-  if (desiredSize <= m_dataCapacity)
-    return;
+  auto dataCapacity = m_dataCapacity;
 
-  if (!m_dataCapacity)
-    m_dataCapacity = INITIAL_LENGTH;
-  while (m_dataCapacity < desiredSize)
-    m_dataCapacity *= 2;
+  if (!dataCapacity)
+    dataCapacity = INITIAL_LENGTH;
+  while (dataCapacity < length)
+    dataCapacity *= 2;
 
-  auto reallocatedDataBuffer = std::make_unique<uint8_t []>(m_dataCapacity);
+  auto reallocatedDataBuffer = std::make_unique<uint8_t []>(dataCapacity);
+
+  if (reallocatedDataBuffer == nullptr)
+    return false;
 
   if (m_dataLength > 0)
     std::copy(m_dataBuffer.get(), m_dataBuffer.get() + m_dataLength, reallocatedDataBuffer.get());
   m_dataBuffer.swap(reallocatedDataBuffer);
+  m_dataCapacity = dataCapacity;
+
+  return true;
 }
 
-Result VfsDataNode::writeData(FsLength position, const void *buffer, size_t bufferLength, size_t *bytesWritten)
+Result VfsDataNode::writeDataBuffer(FsLength position, const void *buffer, size_t length, size_t *written)
 {
   auto * const bufferPosition = static_cast<const uint8_t *>(buffer);
+  const auto end = static_cast<size_t>(position + static_cast<FsLength>(length));
 
-  if (position + bufferLength > m_dataCapacity)
+  if (end > m_dataCapacity)
   {
-    reallocateDataBuffer(position + bufferLength);
-    m_dataLength = position + bufferLength;
+    if (!reallocateDataBuffer(end))
+      return E_MEMORY;
   }
-  std::copy(bufferPosition + position, bufferPosition + position + bufferLength, m_dataBuffer.get());
 
-  if (bytesWritten != nullptr)
-    *bytesWritten = bufferLength;
+  std::copy(bufferPosition, bufferPosition + length, m_dataBuffer.get() + static_cast<size_t>(position));
+  if (end > m_dataLength)
+    m_dataLength = length;
 
-  // TODO Handle memory errors
+  if (written != nullptr)
+    *written = length;
+
   return E_OK;
 }

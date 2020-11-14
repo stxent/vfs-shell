@@ -7,11 +7,11 @@
 #ifndef VFS_SHELL_CORE_SHELL_ARGPARSER_HPP_
 #define VFS_SHELL_CORE_SHELL_ARGPARSER_HPP_
 
+#include "Shell/Script.hpp"
+#include "Shell/Terminal.hpp"
 #include <algorithm>
 #include <cstddef>
 #include <functional>
-#include "Shell/Script.hpp"
-#include "Shell/Terminal.hpp"
 
 class ArgParser
 {

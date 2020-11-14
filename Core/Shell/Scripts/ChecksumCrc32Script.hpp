@@ -7,9 +7,9 @@
 #ifndef VFS_SHELL_CORE_SHELL_SCRIPTS_CHECKSUMCRC32SCRIPT_HPP_
 #define VFS_SHELL_CORE_SHELL_SCRIPTS_CHECKSUMCRC32SCRIPT_HPP_
 
-#include <xcore/crc/crc32.h>
 #include "Shell/ArgParser.hpp"
 #include "Shell/Scripts/DataReader.hpp"
+#include <xcore/crc/crc32.h>
 
 template<size_t BUFFER_SIZE>
 class ChecksumCrc32Script: public DataReader

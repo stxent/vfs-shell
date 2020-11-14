@@ -7,11 +7,12 @@
 #ifndef VFS_SHELL_CORE_SHELL_INITIALIZER_HPP_
 #define VFS_SHELL_CORE_SHELL_INITIALIZER_HPP_
 
-#include <cassert>
-#include <atomic>
-#include <vector>
 #include "Shell/Evaluator.hpp"
 #include "Shell/Settings.hpp"
+#include <xcore/fs/utils.h>
+#include <atomic>
+#include <cassert>
+#include <vector>
 
 class Initializer: public Script
 {
@@ -31,7 +32,7 @@ public:
 
   virtual ~Initializer()
   {
-    FsNode * const binEntryNode = ShellHelpers::openNode(fs(), env()["PATH"]);
+    FsNode * const binEntryNode = fsOpenNode(fs(), env()["PATH"]);
     assert(binEntryNode != nullptr);
 
     // XXX Code assumes that PATH contains default directory
@@ -52,7 +53,7 @@ public:
   template<typename T, typename... ARGs>
   void attach(ARGs... args)
   {
-    FsNode * const binEntryNode = ShellHelpers::openNode(fs(), env()["PATH"]);
+    FsNode * const binEntryNode = fsOpenNode(fs(), env()["PATH"]);
     assert(binEntryNode != nullptr);
 
     ScriptRunnerBase * const runner = new ScriptRunner<T, ARGs...>{args...};

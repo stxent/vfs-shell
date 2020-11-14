@@ -8,6 +8,7 @@
 #include "Shell/Scripts/MakeDirectoryScript.hpp"
 #include "Shell/Settings.hpp"
 #include "Shell/ShellHelpers.hpp"
+#include <xcore/fs/utils.h>
 
 MakeDirectoryScript::MakeDirectoryScript(Script *parent, ArgumentIterator firstArgument,
     ArgumentIterator lastArgument) :
@@ -46,15 +47,15 @@ Result MakeDirectoryScript::makeDirectory(const char *positionalArgument)
   Result res = E_OK;
 
   char absolutePath[Settings::PWD_LENGTH];
-  ShellHelpers::joinPaths(absolutePath, env()["PWD"], positionalArgument);
+  fsJoinPaths(absolutePath, env()["PWD"], positionalArgument);
 
-  FsNode * const root = ShellHelpers::openBaseNode(fs(), absolutePath);
+  FsNode * const root = fsOpenBaseNode(fs(), absolutePath);
   if (root != nullptr)
   {
-    FsNode * const node = ShellHelpers::openNode(fs(), absolutePath);
+    FsNode * const node = fsOpenNode(fs(), absolutePath);
     if (node == nullptr)
     {
-      const char * const nodeName = ShellHelpers::extractName(positionalArgument);
+      const char * const nodeName = fsExtractName(positionalArgument);
       const auto nodeTime = time().getTime();
       const FsFieldDescriptor fields[] = {
           // Name descriptor

@@ -7,9 +7,9 @@
 #ifndef VFS_SHELL_CORE_SHELL_SCRIPTS_DATAREADER_HPP_
 #define VFS_SHELL_CORE_SHELL_SCRIPTS_DATAREADER_HPP_
 
-#include <functional>
 #include "Shell/ShellScript.hpp"
 #include "Wrappers/Semaphore.hpp"
+#include <functional>
 
 class DataReader: public ShellScript
 {
@@ -18,7 +18,7 @@ public:
   virtual Result onEventReceived(const ScriptEvent *) override;
 
 protected:
-  Semaphore m_semaphore;
+  Os::Semaphore m_semaphore;
 
   bool isTerminateRequested();
   Result read(void *, FsNode *, size_t, size_t, size_t, std::function<Result (const void *, size_t)>);

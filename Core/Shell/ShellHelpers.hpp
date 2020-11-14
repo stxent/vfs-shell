@@ -7,9 +7,10 @@
 #ifndef VFS_SHELL_CORE_SHELL_SHELLHELPERS_HPP_
 #define VFS_SHELL_CORE_SHELL_SHELLHELPERS_HPP_
 
-#include <xcore/fs.h>
 #include "Shell/Script.hpp"
 #include "Shell/ScriptHeaders.hpp"
+#include <xcore/fs/fs.h>
+#include <cctype>
 
 class Terminal;
 
@@ -24,15 +25,6 @@ struct ShellHelpers
   ShellHelpers(const ShellHelpers &) = delete;
   ShellHelpers &operator=(const ShellHelpers &) = delete;
 
-  static const char *extractName(const char *);
-  static const char *followNextPart(FsHandle *, FsNode **, const char *, bool);
-  static FsNode *followPath(FsHandle *, const char *, bool);
-  static const char *getChunk(char *, const char *);
-  static void joinPaths(char *, const char *, const char *);
-  static bool stripName(char *);
-
-  static FsNode *openBaseNode(FsHandle *, const char *);
-  static FsNode *openNode(FsHandle *, const char *);
   static FsNode *openScript(FsHandle *, Environment &, const char *);
   static FsNode *openSink(FsHandle *, Environment &, TimeProvider &, const char *, bool, Result *);
   static FsNode *openSource(FsHandle *, Environment &, const char *);

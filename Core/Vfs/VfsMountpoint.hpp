@@ -7,10 +7,10 @@
 #ifndef VFS_SHELL_CORE_VFS_VFSMOUNTPOINT_HPP_
 #define VFS_SHELL_CORE_VFS_VFSMOUNTPOINT_HPP_
 
+#include "Vfs/Vfs.hpp"
+#include <xcore/interface.h>
 #include <functional>
 #include <memory>
-#include <xcore/interface.h>
-#include "Vfs/Vfs.hpp"
 
 class VfsMountpoint: public VfsNode
 {

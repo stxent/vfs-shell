@@ -7,9 +7,9 @@
 #ifndef VFS_SHELL_PLATFORM_LPC17XX_DEVKIT_NODES_DACNODE_HPP_
 #define VFS_SHELL_PLATFORM_LPC17XX_DEVKIT_NODES_DACNODE_HPP_
 
-#include <memory>
-#include <halm/platform/nxp/dac.h>
 #include "Vfs/Vfs.hpp"
+#include <halm/platform/nxp/dac.h>
+#include <memory>
 
 class DacNode: public VfsNode
 {

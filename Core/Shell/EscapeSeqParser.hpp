@@ -8,6 +8,7 @@
 #define VFS_SHELL_CORE_SHELL_ESCAPESEQPARSER_HPP_
 
 #include <array>
+#include <cstddef>
 
 class EscapeSeqParser
 {

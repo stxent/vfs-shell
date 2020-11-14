@@ -7,8 +7,8 @@
 #ifndef VFS_SHELL_CORE_SHELL_TERMINALPROXY_HPP_
 #define VFS_SHELL_CORE_SHELL_TERMINALPROXY_HPP_
 
-#include <memory>
 #include "Shell/ShellScript.hpp"
+#include <memory>
 
 class TerminalProxy: public Terminal
 {

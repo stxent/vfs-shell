@@ -7,10 +7,10 @@
 #ifndef VFS_SHELL_PLATFORM_LPC17XX_DEVKIT_SCRIPTS_SHUTDOWNSCRIPT_HPP_
 #define VFS_SHELL_PLATFORM_LPC17XX_DEVKIT_SCRIPTS_SHUTDOWNSCRIPT_HPP_
 
+#include "Shell/ShellScript.hpp"
 #include <halm/core/cortex/nvic.h>
 #include <halm/platform/nxp/backup_domain.h>
 #include <halm/pm.h>
-#include "Shell/ShellScript.hpp"
 
 class ShutdownScript: public ShellScript
 {

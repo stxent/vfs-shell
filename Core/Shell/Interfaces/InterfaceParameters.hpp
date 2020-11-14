@@ -28,7 +28,11 @@ static constexpr const char *ifParamToName()
       return "alignment";
     case IF_POSITION:
       return "position";
+    case IF_POSITION_64:
+      return "position";
     case IF_SIZE:
+      return "size";
+    case IF_SIZE_64:
       return "size";
     case IF_WIDTH:
       return "width";

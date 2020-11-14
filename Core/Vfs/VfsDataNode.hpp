@@ -7,8 +7,8 @@
 #ifndef VFS_SHELL_CORE_VFS_VFSDATANODE_HPP_
 #define VFS_SHELL_CORE_VFS_VFSDATANODE_HPP_
 
-#include <memory>
 #include "Vfs/Vfs.hpp"
+#include <memory>
 
 class VfsDataNode: public VfsNode
 {
@@ -26,8 +26,8 @@ private:
   size_t m_dataLength;
   std::unique_ptr<uint8_t []> m_dataBuffer;
 
-  void reallocateDataBuffer(size_t);
-  Result writeData(FsLength, const void *, size_t, size_t *);
+  bool reallocateDataBuffer(size_t);
+  Result writeDataBuffer(FsLength, const void *, size_t, size_t *);
 };
 
 #endif // VFS_SHELL_CORE_VFS_VFSDATANODE_HPP_

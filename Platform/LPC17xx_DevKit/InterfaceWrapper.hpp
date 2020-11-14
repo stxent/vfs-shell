@@ -7,10 +7,10 @@
 #ifndef VFS_SHELL_PLATFORM_LPC17XX_DEVKIT_INTERFACEWRAPPER_HPP_
 #define VFS_SHELL_PLATFORM_LPC17XX_DEVKIT_INTERFACEWRAPPER_HPP_
 
-#include <cassert>
-#include <new>
 #include <halm/pin.h>
 #include <xcore/interface.h>
+#include <cassert>
+#include <new>
 
 extern const struct InterfaceClass * const InterfaceWrapper;
 
@@ -42,17 +42,17 @@ public:
     static_cast<InterfaceWrapper *>(object)->~InterfaceWrapper();
   }
 
-  static Result setCallback(void *object, void (*callback)(void *), void *argument)
+  static void setCallback(void *object, void (*callback)(void *), void *argument)
   {
-    return static_cast<InterfaceWrapper *>(object)->setCallbackImpl(callback, argument);
+    static_cast<InterfaceWrapper *>(object)->setCallbackImpl(callback, argument);
   }
 
-  static Result getParam(void *object, IfParameter parameter, void *data)
+  static Result getParam(void *object, int parameter, void *data)
   {
     return static_cast<InterfaceWrapper *>(object)->getParamImpl(parameter, data);
   }
 
-  static Result setParam(void *object, IfParameter parameter, const void *data)
+  static Result setParam(void *object, int parameter, const void *data)
   {
     return static_cast<InterfaceWrapper *>(object)->setParamImpl(parameter, data);
   }
@@ -86,19 +86,19 @@ private:
     pinOutput(m_tx, false);
   }
 
-  Result setCallbackImpl(void (*callback)(void *), void *argument)
+  void setCallbackImpl(void (*callback)(void *), void *argument)
   {
-    return ifSetCallback(m_interface, callback, argument);
+    ifSetCallback(m_interface, callback, argument);
   }
 
-  Result getParamImpl(IfParameter parameter, void *data)
+  Result getParamImpl(int parameter, void *data)
   {
     return ifGetParam(m_interface, parameter, data);
   }
 
-  Result setParamImpl(IfParameter parameter, const void *data)
+  Result setParamImpl(int parameter, const void *data)
   {
-    switch (parameter)
+    switch (static_cast<IfParameter>(parameter))
     {
       case IF_RELEASE:
         pinReset(m_rx);

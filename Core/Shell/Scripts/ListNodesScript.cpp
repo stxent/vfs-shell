@@ -4,10 +4,11 @@
  * Project is distributed under the terms of the GNU General Public License v3.0
  */
 
-#include <xcore/realtime.h>
 #include "Shell/Scripts/ListNodesScript.hpp"
 #include "Shell/Settings.hpp"
 #include "Shell/ShellHelpers.hpp"
+#include <xcore/fs/utils.h>
+#include <xcore/realtime.h>
 
 const std::array<ArgParser::Descriptor, 5> ListNodesScript::descriptors{
     {
@@ -131,8 +132,8 @@ void ListNodesScript::printDirectoryContent(const char *positionalArgument)
 
   char path[Settings::PWD_LENGTH];
 
-  ShellHelpers::joinPaths(path, env()["PWD"], positionalArgument);
-  FsNode * const root = ShellHelpers::openNode(fs(), path);
+  fsJoinPaths(path, env()["PWD"], positionalArgument);
+  FsNode * const root = fsOpenNode(fs(), path);
   if (root == nullptr)
   {
     tty() << name() << ": " << positionalArgument << ": node not found" << Terminal::EOL;

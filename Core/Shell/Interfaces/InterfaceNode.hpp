@@ -7,13 +7,13 @@
 #ifndef VFS_SHELL_CORE_SHELL_INTERFACES_INTERFACENODE_HPP_
 #define VFS_SHELL_CORE_SHELL_INTERFACES_INTERFACENODE_HPP_
 
-#include <tuple>
-#include <xcore/interface.h>
 #include "Shell/Interfaces/DisplayParameters.hpp"
 #include "Shell/Interfaces/InterfaceParameters.hpp"
 #include "Shell/Interfaces/SerialParameters.hpp"
 #include "Vfs/Vfs.hpp"
 #include "Vfs/VfsHandle.hpp"
+#include <xcore/interface.h>
+#include <tuple>
 
 template<typename T, typename... ARGs>
 class ParamBuilder

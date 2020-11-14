@@ -4,16 +4,10 @@
  * Project is distributed under the terms of the GNU General Public License v3.0
  */
 
-#include <cassert>
-#include <cstdlib>
-#include <cstring>
-#include <fstream>
-#include <iostream>
-#include <uv.h>
+#include "MmfBuilder.hpp"
+#include "MountScript.hpp"
+#include "UnixTimeProvider.hpp"
 
-#include <halm/platform/generic/console.h>
-#include <halm/platform/generic/udp.h>
-#include <osw/thread.h>
 #include "Shell/Initializer.hpp"
 #include "Shell/Scripts/ChangeDirectoryScript.hpp"
 #include "Shell/Scripts/ChecksumCrc32Script.hpp"
@@ -35,18 +29,26 @@
 #include "Shell/Scripts/TimeScript.hpp"
 #include "Shell/SerialTerminal.hpp"
 #include "Vfs/VfsHandle.hpp"
-#include "MmfBuilder.hpp"
-#include "MountScript.hpp"
-#include "UnixTimeProvider.hpp"
+
+#include <halm/platform/generic/console.h>
+#include <halm/platform/generic/udp.h>
+#include <osw/thread.h>
+
+#include <cassert>
+#include <cstdlib>
+#include <cstring>
+#include <fstream>
+#include <iostream>
+#include <uv.h>
 
 class Application
 {
 public:
   Application(Interface *serial, bool echoing) :
-      m_serial{serial, [](Interface *pointer){ deinit(pointer); raise(SIGUSR1); }},
-      m_filesystem{static_cast<FsHandle *>(init(VfsHandleClass, nullptr)), [](FsHandle *pointer){ deinit(pointer); }},
-      m_terminal{m_serial.get()},
-      m_initializer{m_filesystem.get(), m_terminal, UnixTimeProvider::instance(), echoing}
+    m_serial{serial, [](Interface *pointer){ deinit(pointer); raise(SIGUSR1); }},
+    m_filesystem{static_cast<FsHandle *>(init(VfsHandleClass, nullptr)), [](FsHandle *pointer){ deinit(pointer); }},
+    m_terminal{m_serial.get()},
+    m_initializer{m_filesystem.get(), m_terminal, UnixTimeProvider::instance(), echoing}
   {
     if (m_serial == nullptr || m_filesystem == nullptr)
       abort(); // TODO Rewrite
@@ -153,7 +155,7 @@ int main(int argc, char *argv[])
   if (help)
   {
     std::cout << "Usage: shell [OPTION]... FILE" << std::endl;
-    std::cout << "  -h, --help         print help message" << std::endl;
+    std::cout << "  -h, --help  print help message" << std::endl;
     exit(EXIT_SUCCESS);
   }
   else
@@ -169,7 +171,7 @@ int main(int argc, char *argv[])
     threadInit(&appThread, 4096, 0, applicationWrapper, application);
     threadStart(&appThread);
 
-    uv_run(uv_default_loop(), UV_RUN_DEFAULT);
+    uv_run(loop, UV_RUN_DEFAULT);
     return EXIT_SUCCESS;
   }
 }

@@ -7,16 +7,16 @@
 #ifndef VFS_SHELL_CORE_SHELL_SERIALTERMINAL_HPP_
 #define VFS_SHELL_CORE_SHELL_SERIALTERMINAL_HPP_
 
-#include <list>
-#include <xcore/interface.h>
 #include "Shell/Terminal.hpp"
+#include <xcore/interface.h>
+#include <list>
 
 class Script;
 
 class SerialTerminal: public Terminal
 {
 public:
-  SerialTerminal(Interface *);
+  SerialTerminal(Interface *, bool = false);
   virtual ~SerialTerminal();
 
   virtual void subscribe(Script *) override;

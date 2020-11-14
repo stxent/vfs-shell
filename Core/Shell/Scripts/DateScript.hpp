@@ -7,8 +7,8 @@
 #ifndef VFS_SHELL_CORE_SHELL_SCRIPTS_DATESCRIPT_HPP_
 #define VFS_SHELL_CORE_SHELL_SCRIPTS_DATESCRIPT_HPP_
 
-#include <xcore/realtime.h>
 #include "Shell/ShellScript.hpp"
+#include <xcore/realtime.h>
 
 class DateScript: public ShellScript
 {

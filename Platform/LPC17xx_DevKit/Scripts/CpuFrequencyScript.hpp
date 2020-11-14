@@ -7,12 +7,13 @@
 #ifndef VFS_SHELL_PLATFORM_LPC17XX_DEVKIT_SCRIPTS_CPUFREQUENCYSCRIPT_HPP_
 #define VFS_SHELL_PLATFORM_LPC17XX_DEVKIT_SCRIPTS_CPUFREQUENCYSCRIPT_HPP_
 
-#include <limits>
-#include <tuple>
+#include "Shell/ArgParser.hpp"
+#include "Shell/ShellScript.hpp"
 #include <halm/platform/nxp/lpc17xx/clocking.h>
 #include <halm/platform/nxp/lpc17xx/system.h>
 #include <halm/pm.h>
-#include "Shell/ShellScript.hpp"
+#include <limits>
+#include <tuple>
 
 template<unsigned long INPUT_FREQUENCY>
 class CpuFrequencyScript: public ShellScript

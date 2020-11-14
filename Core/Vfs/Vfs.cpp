@@ -4,9 +4,9 @@
  * Project is distributed under the terms of the GNU General Public License v3.0
  */
 
-#include <cstring>
 #include "Vfs/Vfs.hpp"
 #include "Vfs/VfsHandle.hpp"
+#include <cstring>
 
 const FsNodeClass VfsNodeProxy::table{
     sizeof(VfsNodeProxy), // size

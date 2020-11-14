@@ -7,10 +7,10 @@
 #ifndef VFS_SHELL_CORE_VFS_VFS_HPP_
 #define VFS_SHELL_CORE_VFS_VFS_HPP_
 
+#include <xcore/fs/fs.h>
+#include <xcore/realtime.h>
 #include <memory>
 #include <new>
-#include <xcore/fs.h>
-#include <xcore/realtime.h>
 
 extern const FsNodeClass * const VfsNodeProxyClass;
 

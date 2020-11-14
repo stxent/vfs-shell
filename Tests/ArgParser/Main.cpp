@@ -4,8 +4,8 @@
  * Project is distributed under the terms of the GNU General Public License v3.0
  */
 
-#include <cassert>
 #include "Shell/ArgParser.hpp"
+#include <cassert>
 
 #undef NDEBUG
 

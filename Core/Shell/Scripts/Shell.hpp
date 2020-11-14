@@ -7,12 +7,12 @@
 #ifndef VFS_SHELL_CORE_SHELL_SCRIPTS_SHELL_HPP_
 #define VFS_SHELL_CORE_SHELL_SCRIPTS_SHELL_HPP_
 
-#include <atomic>
 #include "Shell/EscapeSeqParser.hpp"
 #include "Shell/LineParser.hpp"
 #include "Shell/ShellScript.hpp"
 #include "Shell/TerminalProxy.hpp"
 #include "Wrappers/Semaphore.hpp"
+#include <atomic>
 
 class Shell: public ShellScript
 {
@@ -45,7 +45,7 @@ private:
 
   const char *m_executable;
   TerminalProxy m_terminal;
-  Semaphore m_semaphore;
+  Os::Semaphore m_semaphore;
   std::atomic<State> m_state;
 
   Result evaluate(char *, size_t, bool);

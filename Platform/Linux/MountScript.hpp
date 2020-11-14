@@ -7,8 +7,9 @@
 #ifndef VFS_SHELL_PLATFORM_LINUX_MOUNTSCRIPT_HPP_
 #define VFS_SHELL_PLATFORM_LINUX_MOUNTSCRIPT_HPP_
 
-#include <iterator>
+#include "Shell/ArgParser.hpp"
 #include "Shell/Scripts/MountScriptBase.hpp"
+#include <iterator>
 
 template<typename T>
 class MountScript: public MountScriptBase

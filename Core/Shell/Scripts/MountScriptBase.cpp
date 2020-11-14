@@ -4,11 +4,12 @@
  * Project is distributed under the terms of the GNU General Public License v3.0
  */
 
-#include <yaf/fat32.h>
 #include "Shell/Scripts/MountScriptBase.hpp"
 #include "Shell/Settings.hpp"
 #include "Shell/ShellHelpers.hpp"
 #include "Vfs/VfsMountpoint.hpp"
+#include <xcore/fs/utils.h>
+#include <yaf/fat32.h>
 
 MountScriptBase::MountScriptBase(Script *parent, ArgumentIterator firstArgument, ArgumentIterator lastArgument) :
   ShellScript{parent, firstArgument, lastArgument}
@@ -18,9 +19,9 @@ MountScriptBase::MountScriptBase(Script *parent, ArgumentIterator firstArgument,
 Result MountScriptBase::mount(const char *dst, Interface *interface)
 {
   char path[Settings::PWD_LENGTH];
-  ShellHelpers::joinPaths(path, env()["PWD"], dst);
+  fsJoinPaths(path, env()["PWD"], dst);
 
-  FsNode * const root = ShellHelpers::openBaseNode(fs(), path);
+  FsNode * const root = fsOpenBaseNode(fs(), path);
   if (root == nullptr)
   {
     tty() << name() << ": " << path << ": parent directory not found" << Terminal::EOL;
@@ -34,7 +35,7 @@ Result MountScriptBase::mount(const char *dst, Interface *interface)
   if (partition != nullptr)
   {
     // Create VFS node
-    VfsNode * const mountpoint = new VfsMountpoint{ShellHelpers::extractName(dst), partition, interface,
+    VfsNode * const mountpoint = new VfsMountpoint{fsExtractName(dst), partition, interface,
         time().getTime(), FS_ACCESS_READ | FS_ACCESS_WRITE};
 
     // Link VFS node to the existing file tree
