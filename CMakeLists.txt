@@ -28,6 +28,9 @@ if(${USE_LTO})
     endif()
 endif()
 
+include("Platform/CMakeLists.txt")
+include("Core/CMakeLists.txt")
+
 # Configure XCORE library
 set(FS_NAME_LENGTH 256 CACHE INTERNAL "Filesystem name length" FORCE)
 add_subdirectory(Libs/xcore xcore)
@@ -45,9 +48,6 @@ add_subdirectory(Libs/yaf yaf)
 
 # Configure DPM library
 add_subdirectory(Libs/dpm dpm)
-
-include("Core/CMakeLists.txt")
-include("Platform/CMakeLists.txt")
 
 # Configure executable
 add_executable(${PROJECT_NAME} ${CORE_SOURCES} ${BOARD_SOURCES})

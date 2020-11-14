@@ -7,7 +7,7 @@ if("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "cortex-m4-fpu")
     set(FLAGS_CPU "${FLAGS_CPU} -mfloat-abi=hard -mfpu=fpv4-sp-d16")
 endif()
 
-string(TOUPPER "-D${CMAKE_SYSTEM_SOC}" FLAGS_PLATFORM)
+string(TOUPPER ${CMAKE_SYSTEM_PLATFORM} PLATFORM)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${FLAGS_CPU} ${FLAGS_PLATFORM}")
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Xlinker --gc-sections --specs=nosys.specs --specs=nano.specs")
