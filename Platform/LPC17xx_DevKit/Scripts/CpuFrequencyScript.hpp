@@ -9,8 +9,8 @@
 
 #include "Shell/ArgParser.hpp"
 #include "Shell/ShellScript.hpp"
-#include <halm/platform/nxp/lpc17xx/clocking.h>
-#include <halm/platform/nxp/lpc17xx/system.h>
+#include <halm/platform/lpc/clocking.h>
+#include <halm/platform/lpc/system.h>
 #include <halm/pm.h>
 #include <limits>
 #include <tuple>

@@ -59,7 +59,7 @@ void SerialTerminal::dataCallback()
 {
   size_t available;
 
-  if (ifGetParam(m_interface, IF_AVAILABLE, &available) == E_OK && available)
+  if (ifGetParam(m_interface, IF_RX_AVAILABLE, &available) == E_OK && available)
   {
     SerialInputEvent event;
 

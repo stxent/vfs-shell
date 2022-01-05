@@ -42,16 +42,17 @@
 #include <halm/core/cortex/nvic.h>
 #include <halm/generic/sdio_spi.h>
 #include <halm/pin.h>
-#include <halm/platform/nxp/bod.h>
-#include <halm/platform/nxp/gptimer.h>
-#include <halm/platform/nxp/i2c.h>
-#include <halm/platform/nxp/lpc17xx/clocking.h>
-#include <halm/platform/nxp/serial.h>
-#include <halm/platform/nxp/spi_dma.h>
+#include <halm/platform/lpc/bod.h>
+#include <halm/platform/lpc/gptimer.h>
+#include <halm/platform/lpc/i2c.h>
+#include <halm/platform/lpc/lpc17xx/clocking.h>
+#include <halm/platform/lpc/serial.h>
+#include <halm/platform/lpc/spi_dma.h>
 #include <halm/pm.h>
 #include <dpm/drivers/displays/display.h>
+#include <dpm/drivers/displays/ili9325.h>
 #include <dpm/drivers/displays/s6d1121.h>
-#include <dpm/drivers/platform/nxp/memory_bus_dma.h>
+#include <dpm/drivers/platform/lpc/memory_bus_dma.h>
 #include <xcore/fs/utils.h>
 
 #include <cassert>
@@ -75,9 +76,11 @@ static void enableClock()
 class Application
 {
 private:
-  static constexpr PinNumber DISPLAY_CS{PIN(2, 8)};
+  static constexpr PinNumber DISPLAY_BL{PIN(1, 26)};
+  static constexpr PinNumber DISPLAY_CS{PIN(1, 14)};
   static constexpr PinNumber DISPLAY_RESET{PIN(1, 4)};
-  static constexpr PinNumber DISPLAY_RS{PIN(1, 14)};
+  static constexpr PinNumber DISPLAY_RS{PIN(1, 0)};
+  static constexpr PinNumber DISPLAY_RW{PIN(1, 1)};
 
   static constexpr PinNumber LED_B{PIN(1, 8)};
   static constexpr PinNumber LED_G{PIN(1, 9)};
@@ -218,13 +221,36 @@ private:
 
   static Interface *makeDisplayInterface(Interface *bus)
   {
-    const S6D1121Config config = {
+    pinOutput(pinInit(DISPLAY_RW), false);
+    pinOutput(pinInit(DISPLAY_BL), true);
+
+    const ILI9325Config config = {
         bus,            // bus
         DISPLAY_CS,     // cs
         DISPLAY_RESET,  // reset
         DISPLAY_RS      // rs
     };
-    return static_cast<Interface *>(init(S6D1121, &config));
+    auto display = static_cast<Interface *>(init(ILI9325, &config));
+
+    if (display != nullptr)
+    {
+      const uint32_t orientation = DISPLAY_ORIENTATION_NORMAL;
+      ifSetParam(display, IF_DISPLAY_ORIENTATION, &orientation);
+
+      struct DisplayResolution resolution;
+      ifGetParam(display, IF_DISPLAY_RESOLUTION, &resolution);
+
+      const struct DisplayWindow window = {
+          0,
+          0,
+          static_cast<uint16_t>(resolution.width - 1),
+          static_cast<uint16_t>(resolution.height - 1)
+      };
+      ifSetParam(display, IF_DISPLAY_WINDOW, &window);
+    }
+
+    return display;
+  }
   }
 
   static Interface *makeSdioInterface(Interface *spi, Timer *timer, PinNumber cs)
@@ -247,29 +273,29 @@ const BodConfig Application::s_bodConfig = {
 };
 
 const MemoryBusDmaConfig Application::s_displayBusConfig = {
-    80,               // cycle
     s_displayBusPins, // pins
+    32768,            // size
+    80,               // cycle
     0,                // priority
 
     // clock
     {
-        PIN(1, 22), // leading
-        PIN(1, 25), // trailing
-        1,          // channel
-        0,          // dma
-        false,      // inversion
-        false       // swap
+        PIN(1, 28),   // leading
+        PIN(1, 29),   // trailing
+        0,            // channel
+        1,            // dma
+        false,        // inversion
+        true          // swap
     },
 
     // control
     {
-        PIN(1, 26), // capture
-        0,          // select
-        PIN(1, 28), // leading
-        PIN(1, 29), // trailing
-        0,          // channel
-        1,          // dma
-        false       // inversion
+        PIN(1, 19),   // capture
+        PIN(1, 22),   // leading
+        PIN(1, 25),   // trailing
+        1,            // channel
+        0,            // dma
+        false         // inversion
     }
 };
 
@@ -295,21 +321,21 @@ const GpTimerConfig Application::s_sdioTimerConfig = {
 };
 
 const SerialConfig Application::s_serialConfig = {
-    115200,             // rate
     128,                // rxLength
     4096,               // txLength
+    115200,             // rate
     SERIAL_PARITY_NONE, // parity
-    PIN(0, 3),          // rx
-    PIN(0, 2),          // tx
+    PIN(0, 16),         // rx
+    PIN(0, 15),         // tx
     0,                  // priority
-    0                   // channel
+    1                   // channel
 };
 
 const SpiDmaConfig Application::s_spiConfig = {
-    25000000,   // rate
+    10000000,   // rate
     PIN(0, 17), // miso
     PIN(0, 18), // mosi
-    PIN(0, 15), // sck
+    PIN(1, 20), // sck
     0,          // channel
     3,          // mode
     {2, 3}      // dma

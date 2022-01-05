@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <cstring>
 #include <cstdint>
+#include <limits>
 #include <type_traits>
 
 class TerminalHelpers

@@ -9,7 +9,7 @@
 
 #include "Shell/ShellScript.hpp"
 #include <halm/core/cortex/nvic.h>
-#include <halm/platform/nxp/backup_domain.h>
+#include <halm/platform/lpc/backup_domain.h>
 #include <halm/pm.h>
 #include <atomic>
 

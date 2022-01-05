@@ -1,7 +1,7 @@
 #Copyright (C) 2017 xent
 #Project is distributed under the terms of the GNU General Public License v3.0
 
-cmake_minimum_required(VERSION 3.6)
+cmake_minimum_required(VERSION 3.13)
 
 set(CMAKE_SYSTEM_NAME "Generic")
 

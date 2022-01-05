@@ -8,8 +8,8 @@
 #define VFS_SHELL_PLATFORM_LPC17XX_DEVKIT_ENTRIES_REALTIMECLOCK_HPP_
 
 #include "Shell/TimeProvider.hpp"
-#include <halm/platform/nxp/gptimer.h>
-#include <halm/platform/nxp/rtc.h>
+#include <halm/platform/lpc/gptimer.h>
+#include <halm/platform/lpc/rtc.h>
 #include <functional>
 #include <limits>
 #include <memory>
