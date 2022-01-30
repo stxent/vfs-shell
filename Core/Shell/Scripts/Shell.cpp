@@ -34,6 +34,10 @@ Result Shell::onEventReceived(const ScriptEvent *event)
       }
       break;
 
+    case ScriptEvent::Event::SIGNAL_RAISED:
+      m_state = State::STOP;
+      break;
+
     default:
       break;
   }
@@ -82,6 +86,7 @@ Result Shell::run()
         else if (escapeStatus == EscapeSeqParser::Status::DISCARDED)
         {
           const auto lineStatus = lineParser.parse(rxBuffer[i]);
+          bool promptRequired = false;
 
           if (lineStatus == LineParser::Status::COMPLETED || lineStatus == LineParser::Status::TERMINATED)
           {
@@ -89,15 +94,17 @@ Result Shell::run()
             lastCommandResult = evaluate(lineParser.data(), lineParser.length(), echo);
             lineParser.reset();
 
-            if (interactive)
-              showPrompt(pwd);
+            if (lineStatus != LineParser::Status::TERMINATED)
+              promptRequired = m_state != State::STOP;
+            else
+              m_state = State::STOP;
           }
 
-          if (lineStatus == LineParser::Status::TERMINATED)
-          {
-            m_state = State::STOP;
+          if (m_state == State::STOP)
             break;
-          }
+
+          if (promptRequired && interactive)
+            showPrompt(pwd);
         }
       }
     }

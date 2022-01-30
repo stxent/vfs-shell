@@ -38,6 +38,9 @@ public:
 
   virtual Result onEventReceived(const ScriptEvent *event) override
   {
+    if (event->event == ScriptEvent::Event::SIGNAL_RAISED)
+      m_parent->onEventReceived(event);
+
     return m_terminal.onEventReceived(event);
   }
 

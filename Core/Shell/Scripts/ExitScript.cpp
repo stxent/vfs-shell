@@ -13,6 +13,11 @@ ExitScript::ExitScript(Script *parent, ArgumentIterator firstArgument, ArgumentI
 
 Result ExitScript::run()
 {
-  // TODO
+  SignalRaisedEvent event;
+
+  event.event = ScriptEvent::Event::SIGNAL_RAISED;
+  event.signal = SignalRaisedEvent::TERMINATE;
+
+  m_parent->onEventReceived(&event);
   return E_OK;
 }

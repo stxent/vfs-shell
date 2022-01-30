@@ -95,10 +95,11 @@ private:
   static const SerialConfig s_serialConfig;
   static const SpiDmaConfig s_spiConfig;
 
-  static void interfaceDeleter(Interface *pointer)
-  {
-    deinit(pointer);
-  }
+  void bootstrap();
+  static void interfaceDeleter(Interface *pointer);
+  static Interface *makeDisplayInterface(Interface *bus);
+  static Interface *makeSdioInterface(Interface *spi, Timer *timer, PinNumber cs);
+  static Interface *makeSdioWrapper(Interface *interface, PinNumber rx, PinNumber tx);
 
 public:
   Application() :
@@ -171,99 +172,6 @@ private:
   std::unique_ptr<FsHandle, std::function<void (FsHandle *)>> m_filesystem;
   SerialTerminal m_terminal;
   Initializer m_initializer;
-
-  void bootstrap()
-  {
-    FsNode *parent;
-
-    // Root nodes
-    VfsNode *rootEntries[] = {
-        new VfsDirectory{"bin", RealTimeClock::instance().getTime()},
-        new VfsDirectory{"dev", RealTimeClock::instance().getTime()}
-    };
-
-    parent = static_cast<FsNode *>(fsHandleRoot(m_filesystem.get()));
-    for (auto iter = std::begin(rootEntries); iter != std::end(rootEntries); ++iter)
-    {
-      const FsFieldDescriptor entryFields[] = {
-          {&*iter, sizeof(*iter), static_cast<FsFieldType>(VfsNode::VFS_NODE_OBJECT)}
-      };
-      fsNodeCreate(parent, entryFields, ARRAY_SIZE(entryFields));
-    }
-    fsNodeFree(parent);
-
-    // Device nodes
-    VfsNode *deviceEntries[] = {
-        new InterfaceNode<
-            ParamDesc<IfDisplayParameter, IF_DISPLAY_ORIENTATION, uint8_t>,
-            ParamDesc<IfDisplayParameter, IF_DISPLAY_RESOLUTION, DisplayResolution, uint16_t, uint16_t>,
-            ParamDesc<IfDisplayParameter, IF_DISPLAY_WINDOW, DisplayWindow, uint16_t, uint16_t, uint16_t, uint16_t>
-        >("display", m_display.get(), RealTimeClock::instance().getTime()),
-        new InterfaceNode<
-            ParamDesc<IfParameter, IF_RATE, uint32_t>
-        >("sdio", m_sdio.get(), RealTimeClock::instance().getTime()),
-        new InterfaceNode<
-            ParamDesc<SerialParameter, IF_SERIAL_PARITY, uint8_t>,
-            ParamDesc<IfParameter, IF_RATE, uint32_t>
-        >("serial", m_serial.get(), RealTimeClock::instance().getTime())
-    };
-
-    parent = fsOpenNode(m_filesystem.get(), "/dev");
-    for (auto iter = std::begin(deviceEntries); iter != std::end(deviceEntries); ++iter)
-    {
-      const FsFieldDescriptor entryFields[] = {
-          {&*iter, sizeof(*iter), static_cast<FsFieldType>(VfsNode::VFS_NODE_OBJECT)}
-      };
-      fsNodeCreate(parent, entryFields, ARRAY_SIZE(entryFields));
-    }
-    fsNodeFree(parent);
-  }
-
-  static Interface *makeDisplayInterface(Interface *bus)
-  {
-    pinOutput(pinInit(DISPLAY_RW), false);
-    pinOutput(pinInit(DISPLAY_BL), true);
-
-    const ILI9325Config config = {
-        bus,            // bus
-        DISPLAY_CS,     // cs
-        DISPLAY_RESET,  // reset
-        DISPLAY_RS      // rs
-    };
-    auto display = static_cast<Interface *>(init(ILI9325, &config));
-
-    if (display != nullptr)
-    {
-      const uint32_t orientation = DISPLAY_ORIENTATION_NORMAL;
-      ifSetParam(display, IF_DISPLAY_ORIENTATION, &orientation);
-
-      struct DisplayResolution resolution;
-      ifGetParam(display, IF_DISPLAY_RESOLUTION, &resolution);
-
-      const struct DisplayWindow window = {
-          0,
-          0,
-          static_cast<uint16_t>(resolution.width - 1),
-          static_cast<uint16_t>(resolution.height - 1)
-      };
-      ifSetParam(display, IF_DISPLAY_WINDOW, &window);
-    }
-
-    return display;
-  }
-  }
-
-  static Interface *makeSdioInterface(Interface *spi, Timer *timer, PinNumber cs)
-  {
-    const SdioSpiConfig config{spi, timer, nullptr, 0, cs};
-    return static_cast<Interface *>(init(SdioSpi, &config));
-  }
-
-  static Interface *makeSdioWrapper(Interface *interface, PinNumber rx, PinNumber tx)
-  {
-    const InterfaceWrapper::Config config{interface, rx, tx};
-    return static_cast<Interface *>(init(InterfaceWrapper, &config));
-  }
 };
 
 const BodConfig Application::s_bodConfig = {
@@ -340,6 +248,103 @@ const SpiDmaConfig Application::s_spiConfig = {
     3,          // mode
     {2, 3}      // dma
 };
+
+void Application::bootstrap()
+{
+  FsNode *parent;
+
+  // Root nodes
+  VfsNode *rootEntries[] = {
+      new VfsDirectory{"bin", RealTimeClock::instance().getTime()},
+      new VfsDirectory{"dev", RealTimeClock::instance().getTime()}
+  };
+
+  parent = static_cast<FsNode *>(fsHandleRoot(m_filesystem.get()));
+  for (auto iter = std::begin(rootEntries); iter != std::end(rootEntries); ++iter)
+  {
+    const FsFieldDescriptor entryFields[] = {
+        {&*iter, sizeof(*iter), static_cast<FsFieldType>(VfsNode::VFS_NODE_OBJECT)}
+    };
+    fsNodeCreate(parent, entryFields, ARRAY_SIZE(entryFields));
+  }
+  fsNodeFree(parent);
+
+  // Device nodes
+  VfsNode *deviceEntries[] = {
+      new InterfaceNode<
+          ParamDesc<IfDisplayParameter, IF_DISPLAY_ORIENTATION, uint8_t>,
+          ParamDesc<IfDisplayParameter, IF_DISPLAY_RESOLUTION, DisplayResolution, uint16_t, uint16_t>,
+          ParamDesc<IfDisplayParameter, IF_DISPLAY_WINDOW, DisplayWindow, uint16_t, uint16_t, uint16_t, uint16_t>
+      >("display", m_display.get(), RealTimeClock::instance().getTime()),
+      new InterfaceNode<
+          ParamDesc<IfParameter, IF_RATE, uint32_t>
+      >("sdio", m_sdio.get(), RealTimeClock::instance().getTime()),
+      new InterfaceNode<
+          ParamDesc<SerialParameter, IF_SERIAL_PARITY, uint8_t>,
+          ParamDesc<IfParameter, IF_RATE, uint32_t>
+      >("serial", m_serial.get(), RealTimeClock::instance().getTime())
+  };
+
+  parent = fsOpenNode(m_filesystem.get(), "/dev");
+  for (auto iter = std::begin(deviceEntries); iter != std::end(deviceEntries); ++iter)
+  {
+    const FsFieldDescriptor entryFields[] = {
+        {&*iter, sizeof(*iter), static_cast<FsFieldType>(VfsNode::VFS_NODE_OBJECT)}
+    };
+    fsNodeCreate(parent, entryFields, ARRAY_SIZE(entryFields));
+  }
+  fsNodeFree(parent);
+}
+
+void Application::interfaceDeleter(Interface *pointer)
+{
+  deinit(pointer);
+}
+
+Interface *Application::makeDisplayInterface(Interface *bus)
+{
+  pinOutput(pinInit(DISPLAY_RW), false);
+  pinOutput(pinInit(DISPLAY_BL), true);
+
+  const ILI9325Config config = {
+      bus,            // bus
+      DISPLAY_CS,     // cs
+      DISPLAY_RESET,  // reset
+      DISPLAY_RS      // rs
+  };
+  auto display = static_cast<Interface *>(init(ILI9325, &config));
+
+  if (display != nullptr)
+  {
+    const uint32_t orientation = DISPLAY_ORIENTATION_NORMAL;
+    ifSetParam(display, IF_DISPLAY_ORIENTATION, &orientation);
+
+    struct DisplayResolution resolution;
+    ifGetParam(display, IF_DISPLAY_RESOLUTION, &resolution);
+
+    const struct DisplayWindow window = {
+        0,
+        0,
+        static_cast<uint16_t>(resolution.width - 1),
+        static_cast<uint16_t>(resolution.height - 1)
+    };
+    ifSetParam(display, IF_DISPLAY_WINDOW, &window);
+  }
+
+  return display;
+}
+
+Interface *Application::makeSdioInterface(Interface *spi, Timer *timer, PinNumber cs)
+{
+  const SdioSpiConfig config{spi, timer, nullptr, 0, cs};
+  return static_cast<Interface *>(init(SdioSpi, &config));
+}
+
+Interface *Application::makeSdioWrapper(Interface *interface, PinNumber rx, PinNumber tx)
+{
+  const InterfaceWrapper::Config config{interface, rx, tx};
+  return static_cast<Interface *>(init(InterfaceWrapper, &config));
+}
 
 int main()
 {

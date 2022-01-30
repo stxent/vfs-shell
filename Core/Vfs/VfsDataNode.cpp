@@ -108,7 +108,7 @@ Result VfsDataNode::writeDataBuffer(FsLength position, const void *buffer, size_
 
   std::copy(bufferPosition, bufferPosition + length, m_dataBuffer.get() + static_cast<size_t>(position));
   if (end > m_dataLength)
-    m_dataLength = length;
+    m_dataLength = end;
 
   if (written != nullptr)
     *written = length;

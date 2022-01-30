@@ -30,26 +30,6 @@ public:
     m_environment["SHELL"] = "sh";
   }
 
-  virtual ~Initializer()
-  {
-    FsNode * const binEntryNode = fsOpenNode(fs(), env()["PATH"]);
-    assert(binEntryNode != nullptr);
-
-    // XXX Code assumes that PATH contains default directory
-    for (auto iter = m_scripts.begin(); iter != m_scripts.end(); ++iter)
-    {
-      FsNode * const scriptEntryNode = ShellHelpers::openScript(fs(), env(), (*iter)->name());
-
-      if (scriptEntryNode != nullptr)
-      {
-        fsNodeRemove(binEntryNode, scriptEntryNode);
-        fsNodeFree(scriptEntryNode);
-      }
-    }
-
-    fsNodeFree(binEntryNode);
-  }
-
   template<typename T, typename... ARGs>
   void attach(ARGs... args)
   {

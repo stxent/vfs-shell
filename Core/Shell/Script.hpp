@@ -23,7 +23,8 @@ struct ScriptEvent
   {
     BUTTON_PRESSED,
     POINTER_MOVED,
-    SERIAL_INPUT
+    SERIAL_INPUT,
+    SIGNAL_RAISED
   };
 
   Event event;
@@ -44,6 +45,16 @@ struct PointerMovedEvent: public ScriptEvent
 struct SerialInputEvent: public ScriptEvent
 {
   size_t length;
+};
+
+struct SignalRaisedEvent: public ScriptEvent
+{
+  enum Signal: unsigned short
+  {
+      TERMINATE
+  };
+
+  unsigned short signal;
 };
 
 class Script
@@ -67,7 +78,7 @@ class ScriptRunnerBase
 public:
   virtual ~ScriptRunnerBase() = default;
   virtual const char *name() const = 0;
-  virtual Result run(Script *parent, Script::ArgumentIterator, Script::ArgumentIterator) const = 0;
+  virtual Result run(Script *, Script::ArgumentIterator, Script::ArgumentIterator) const = 0;
 };
 
 template<typename T, typename... ARGs>

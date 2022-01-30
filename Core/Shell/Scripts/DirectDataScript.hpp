@@ -9,6 +9,7 @@
 
 #include "Shell/ArgParser.hpp"
 #include "Shell/Scripts/DataReader.hpp"
+#include "Shell/ShellHelpers.hpp"
 
 template<size_t BUFFER_SIZE>
 class DirectDataScript: public DataReader

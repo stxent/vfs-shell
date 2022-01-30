@@ -15,6 +15,19 @@ VfsDirectory::VfsDirectory(const char *name, time64_t timestamp, FsAccess access
 {
 }
 
+VfsDirectory::~VfsDirectory()
+{
+  VfsHandle::Locker locker(*m_handle);
+
+  for (auto iter = m_nodes.begin(); iter != m_nodes.end();)
+  {
+    VfsNode * const node = *iter;
+
+    iter = m_nodes.erase(iter);
+    delete node;
+  }
+}
+
 Result VfsDirectory::create(const FsFieldDescriptor *descriptors, size_t number)
 {
   const struct FsFieldDescriptor *dataDesc = 0;
