@@ -17,13 +17,13 @@ git submodule update --init --recursive
 Build project for Linux:
 
 ```sh
-cmake .. -DPLATFORM=Linux
+cmake .. -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=ON
 ```
 
 Build project for LPC17xx Development Board:
 
 ```sh
-cmake .. -DPLATFORM=LPC17xx_DevKit -DCMAKE_TOOLCHAIN_FILE=Toolchains/arm-none-eabi.cmake
+cmake .. -DCMAKE_BUILD_TYPE=Debug -DBOARD=LPC17xx_DevKit -DCMAKE_TOOLCHAIN_FILE=Libs/xcore/toolchains/cortex-m3.cmake -DPLATFORM=LPC17XX
 ```
 
 Useful settings

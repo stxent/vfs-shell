@@ -12,6 +12,10 @@ option(USE_LTO "Enable Link Time Optimization." OFF)
 # Configure build flags
 set(FLAGS_DEFAULT "-fdata-sections -ffunction-sections -Wall -Wextra -Wshadow -pedantic")
 
+if(NOT DEFINED BOARD)
+    set(BOARD "Linux")
+endif()
+
 if(NOT ${BUILD_TESTING})
     set(FLAGS_DEFAULT "${FLAGS_DEFAULT} -fno-rtti -fno-exceptions")
 endif()
