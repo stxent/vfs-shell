@@ -7,6 +7,11 @@
 #include "UnixTimeProvider.hpp"
 #include <ctime>
 
+time64_t UnixTimeProvider::getAlarm()
+{
+  return 0;
+}
+
 time64_t UnixTimeProvider::getTime()
 {
   struct timespec currentTime;
@@ -15,4 +20,14 @@ time64_t UnixTimeProvider::getTime()
     return currentTime.tv_sec * 1000000 + currentTime.tv_nsec / 1000;
   else
     return 0;
+}
+
+Result UnixTimeProvider::setAlarm(time64_t)
+{
+  return E_INVALID;
+}
+
+Result UnixTimeProvider::setTime(time64_t)
+{
+  return E_INVALID;
 }

@@ -46,9 +46,14 @@ public:
     {
       return E_VALUE;
     }
-    else if (arguments.src == nullptr || arguments.dst == nullptr)
+    else if (arguments.src == nullptr)
     {
-      tty() << name() << ": source and destination files should be provided" << Terminal::EOL;
+      tty() << name() << ": missing source file operand" << Terminal::EOL;
+      return E_VALUE;
+    }
+    else if (arguments.dst == nullptr)
+    {
+      tty() << name() << ": missing destination file operand" << Terminal::EOL;
       return E_VALUE;
     }
     else if (arguments.bs > BUFFER_SIZE)
@@ -67,7 +72,7 @@ public:
 
     // Open the destination node
     Result res;
-    FsNode * const dst = ShellHelpers::openSink(fs(), env(), time(), arguments.dst, false, &res);
+    FsNode * const dst = ShellHelpers::openSink(fs(), env(), time(), arguments.dst, true, &res);
     if (dst == nullptr)
     {
       tty() << name() << ": " << arguments.dst << ": open failed" << Terminal::EOL;
@@ -79,8 +84,8 @@ public:
     uint8_t buffer[BUFFER_SIZE];
     FsLength pos = static_cast<FsLength>(arguments.seek) * arguments.bs;
 
-    res = read(buffer, src, arguments.bs, 0, 0, std::bind(&DirectDataScript::onDataRead, this, dst, &pos,
-        std::placeholders::_1, std::placeholders::_2));
+    res = read(buffer, src, arguments.bs, arguments.count, arguments.skip, std::bind(&DirectDataScript::onDataRead,
+        this, dst, &pos, std::placeholders::_1, std::placeholders::_2));
 
     fsNodeFree(dst);
     fsNodeFree(src);

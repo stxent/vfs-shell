@@ -9,6 +9,7 @@
 
 #include "Shell/Initializer.hpp"
 #include "Shell/SerialTerminal.hpp"
+#include "Vfs/Vfs.hpp"
 #include <halm/interrupt.h>
 #include <xcore/interface.h>
 #include <chrono>
@@ -21,14 +22,19 @@ class TestApplication
 public:
   static constexpr size_t BUFFER_SIZE{4096};
 
-  TestApplication(Interface *, Interface *);
+  TestApplication(Interface *, Interface *, bool = false);
   virtual ~TestApplication() = default;
 
   static void runEventLoop(void *);
   static void runShell(void *);
 
+  void injectNode(const char *, VfsNode *);
   void makeDataNode(const char *, size_t, char);
+  void makeDataNode(const char *, const char *, size_t);
+  void makeDataNode(const char *, const char *);
+  void sendShellBuffer(const char *, size_t);
   void sendShellCommand(const char *);
+  void sendShellText(const char *);
   std::vector<std::string> waitShellResponse(std::chrono::milliseconds = std::chrono::milliseconds{1000});
 
   static Interrupt *makeSignalListener(int, void (*)(void *), void *);

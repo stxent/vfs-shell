@@ -98,15 +98,13 @@ Result VfsNode::read(FsFieldType type, FsLength position, void *buffer, size_t b
   {
     case FS_NODE_ACCESS:
     {
-      static const FsAccess value = FS_ACCESS_READ | FS_ACCESS_WRITE;
-
       if (position)
         return E_INVALID;
-      if (bufferLength != sizeof(value))
+      if (bufferLength != sizeof(m_access))
         return E_VALUE;
 
-      memcpy(buffer, &value, sizeof(value));
-      count = sizeof(value);
+      memcpy(buffer, &m_access, sizeof(m_access));
+      count = sizeof(m_access);
       break;
     }
 
@@ -170,6 +168,18 @@ Result VfsNode::write(FsFieldType type, FsLength position, const void *buffer, s
 
   switch (type)
   {
+    case FS_NODE_ACCESS:
+    {
+      if (position)
+        return E_INVALID;
+      if (bufferLength != sizeof(m_access))
+        return E_VALUE;
+
+      memcpy(&m_access, buffer, sizeof(m_access));
+      count = sizeof(m_access);
+      break;
+    }
+
     case FS_NODE_TIME:
     {
       if (position)

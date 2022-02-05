@@ -42,6 +42,7 @@ public:
     }
     else
     {
+      tty() << name() << ": missing destination file operand" << Terminal::EOL;
       return E_VALUE;
     }
   }

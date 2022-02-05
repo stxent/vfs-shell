@@ -24,6 +24,8 @@ VfsDirectory::~VfsDirectory()
     VfsNode * const node = *iter;
 
     iter = m_nodes.erase(iter);
+
+    node->leave();
     delete node;
   }
 }
@@ -117,8 +119,15 @@ Result VfsDirectory::create(const FsFieldDescriptor *descriptors, size_t number)
     else
     {
       // Create data node
-      node = new VfsDataNode{static_cast<const char *>(nameDesc->data), dataDesc->data, dataDesc->length,
-          nodeTime, nodeAccess};
+      auto dataNode = new VfsDataNode{static_cast<const char *>(nameDesc->data), nodeTime, nodeAccess};
+
+      if (!dataNode->reserve(dataDesc->data, dataDesc->length))
+      {
+        delete dataNode;
+        return E_MEMORY;
+      }
+
+      node = dataNode;
     }
   }
 

@@ -12,12 +12,13 @@ TerminalProxy::TerminalProxy(Script *parent, Terminal &terminal, const char *inp
   m_terminal{terminal},
   m_parent{parent},
   m_subscriber{nullptr},
-  m_input{nullptr, 0, false},
-  m_output{nullptr, 0}
+  m_input{nullptr, 0, false, false},
+  m_output{nullptr, 0, false}
 {
-  // TODO Better error handling
   if (inputPath != nullptr)
   {
+    m_input.enabled = true;
+
     m_input.node = {
         ShellHelpers::openSource(m_parent->fs(), m_parent->env(), inputPath),
         freeNode
@@ -26,6 +27,8 @@ TerminalProxy::TerminalProxy(Script *parent, Terminal &terminal, const char *inp
 
   if (outputPath != nullptr)
   {
+    m_output.enabled = true;
+
     m_output.node = {
         ShellHelpers::openSink(m_parent->fs(), m_parent->env(), m_parent->time(), outputPath, true, nullptr),
         freeNode
@@ -113,6 +116,16 @@ size_t TerminalProxy::write(const char *buffer, size_t length)
   {
     return m_terminal.write(buffer, length);
   }
+}
+
+bool TerminalProxy::isInputReady() const
+{
+  return !m_input.enabled || m_input.node != nullptr;
+}
+
+bool TerminalProxy::isOutputReady() const
+{
+  return !m_output.enabled || m_output.node != nullptr;
 }
 
 void TerminalProxy::freeNode(FsNode *node)

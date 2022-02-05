@@ -20,6 +20,11 @@ public:
   RealTimeClock(const RealTimeClock &) = delete;
   RealTimeClock &operator=(const RealTimeClock &) = delete;
 
+  virtual time64_t getAlarm() override
+  {
+    return 0;
+  }
+
   virtual time64_t getTime() override
   {
     time64_t globalTick;

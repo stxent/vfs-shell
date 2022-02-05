@@ -21,6 +21,9 @@ public:
   virtual size_t read(char *, size_t) override;
   virtual size_t write(const char *, size_t) override;
 
+  bool isInputReady() const;
+  bool isOutputReady() const;
+
 private:
   Terminal &m_terminal;
   Script *m_parent;
@@ -30,6 +33,7 @@ private:
   {
     std::unique_ptr<FsNode, std::function<void (FsNode *)>> node;
     FsLength position;
+    bool enabled;
     bool eof;
   } m_input;
 
@@ -37,6 +41,7 @@ private:
   {
     std::unique_ptr<FsNode, std::function<void (FsNode *)>> node;
     FsLength position;
+    bool enabled;
   } m_output;
 
   static void freeNode(FsNode *);

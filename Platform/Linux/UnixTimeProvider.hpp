@@ -15,17 +15,10 @@ public:
   UnixTimeProvider(const UnixTimeProvider &) = delete;
   UnixTimeProvider &operator=(const UnixTimeProvider &) = delete;
 
+  virtual time64_t getAlarm() override;
   virtual time64_t getTime() override;
-
-  virtual Result setAlarm(time64_t) override
-  {
-    return E_INVALID;
-  }
-
-  virtual Result setTime(time64_t) override
-  {
-    return E_INVALID;
-  }
+  virtual Result setAlarm(time64_t) override;
+  virtual Result setTime(time64_t) override;
 
   static UnixTimeProvider &instance()
   {

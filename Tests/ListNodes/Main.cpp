@@ -5,6 +5,7 @@
  */
 
 #include "TestApplication.hpp"
+#include "Shell/Scripts/GetEnvScript.hpp"
 #include "Shell/Scripts/ListNodesScript.hpp"
 #include <cppunit/CompilerOutputter.h>
 #include <cppunit/extensions/HelperMacros.h>
@@ -35,6 +36,7 @@ public:
   {
     TestApplication::bootstrap();
 
+    m_initializer.attach<GetEnvScript>();
     m_initializer.attach<ListNodesScript>();
   }
 };
@@ -42,18 +44,26 @@ public:
 class ListNodesTest: public CPPUNIT_NS::TestFixture
 {
   CPPUNIT_TEST_SUITE(ListNodesTest);
+  CPPUNIT_TEST(testErrorNoDescendants);
+  CPPUNIT_TEST(testErrorNoNode);
   CPPUNIT_TEST(testExtendedInfo);
   CPPUNIT_TEST(testHelpMessage);
   CPPUNIT_TEST(testHumanReadableSize);
+  CPPUNIT_TEST(testListMultipleNodes);
+  CPPUNIT_TEST(testNodeSize);
   CPPUNIT_TEST_SUITE_END();
 
 public:
   void setUp();
   void tearDown();
 
+  void testErrorNoDescendants();
+  void testErrorNoNode();
   void testExtendedInfo();
   void testHelpMessage();
   void testHumanReadableSize();
+  void testListMultipleNodes();
+  void testNodeSize();
 
 private:
   uv_loop_t *m_loop{nullptr};
@@ -69,17 +79,25 @@ private:
 void ListNodesTest::setUp()
 {
   m_loop = uv_default_loop();
+  CPPUNIT_ASSERT(m_loop != nullptr);
 
   m_listener = TestApplication::makeSignalListener(SIGUSR1, onSignalReceived, m_loop);
+  CPPUNIT_ASSERT(m_listener != nullptr);
   m_appInterface = TestApplication::makeUdpInterface("127.0.0.1", 8000, 8001);
+  CPPUNIT_ASSERT(m_appInterface != nullptr);
   m_testInterface = TestApplication::makeUdpInterface("127.0.0.1", 8001, 8000);
+  CPPUNIT_ASSERT(m_testInterface != nullptr);
 
   m_application = new TestListNodesApplication(m_appInterface, m_testInterface);
+  CPPUNIT_ASSERT(m_application != nullptr);
+
+  m_application->makeDataNode("/test.bin", 1572864, 'A');
 
   m_loopThread = new std::thread{TestApplication::runEventLoop, m_loop};
+  CPPUNIT_ASSERT(m_loopThread != nullptr);
   m_appThread = new std::thread{TestApplication::runShell, m_application};
+  CPPUNIT_ASSERT(m_appThread != nullptr);
 
-  m_application->makeDataNode("/test.bin", 65536, 'A');
   m_application->waitShellResponse();
 }
 
@@ -94,6 +112,43 @@ void ListNodesTest::tearDown()
   delete m_loopThread;
 }
 
+void ListNodesTest::testErrorNoDescendants()
+{
+  m_application->sendShellCommand("ls /test.bin");
+  const auto response = m_application->waitShellResponse();
+  const auto result = TestApplication::responseContainsText(response, "node has no descendants");
+  CPPUNIT_ASSERT(result == true);
+
+  m_application->sendShellCommand("getenv ?");
+  const auto returnValue = m_application->waitShellResponse();
+  const auto returnValueFound = TestApplication::responseContainsText(returnValue, std::to_string(E_OK));
+  CPPUNIT_ASSERT(returnValueFound == true);
+}
+
+void ListNodesTest::testErrorNoNode()
+{
+  m_application->sendShellCommand("ls /undefined");
+  const auto response = m_application->waitShellResponse();
+  const auto result = TestApplication::responseContainsText(response, "node not found");
+  CPPUNIT_ASSERT(result == true);
+
+  m_application->sendShellCommand("getenv ?");
+  const auto returnValue = m_application->waitShellResponse();
+  const auto returnValueFound = TestApplication::responseContainsText(returnValue, std::to_string(E_ENTRY));
+  CPPUNIT_ASSERT(returnValueFound == true);
+}
+
+void ListNodesTest::testHumanReadableSize()
+{
+  m_application->sendShellCommand("ls -l -h");
+  const auto response = m_application->waitShellResponse();
+
+  const auto result0 = TestApplication::responseContainsText(response, "test.bin");
+  CPPUNIT_ASSERT(result0 == true);
+  const auto result1 = TestApplication::responseContainsText(response, "1.5M");
+  CPPUNIT_ASSERT(result1 == true);
+}
+
 void ListNodesTest::testHelpMessage()
 {
   m_application->sendShellCommand("ls --help");
@@ -103,17 +158,6 @@ void ListNodesTest::testHelpMessage()
   CPPUNIT_ASSERT(result == true);
 }
 
-void ListNodesTest::testHumanReadableSize()
-{
-  m_application->sendShellCommand("ls -h");
-  const auto response = m_application->waitShellResponse();
-
-  const auto result0 = TestApplication::responseContainsText(response, "bin");
-  CPPUNIT_ASSERT(result0 == true);
-  const auto result1 = TestApplication::responseContainsText(response, "dev");
-  CPPUNIT_ASSERT(result1 == true);
-}
-
 void ListNodesTest::testExtendedInfo()
 {
   m_application->sendShellCommand("ls -l -i bin");
@@ -121,6 +165,30 @@ void ListNodesTest::testExtendedInfo()
 
   const auto result = TestApplication::responseContainsText(response, "ls");
   CPPUNIT_ASSERT(result == true);
+}
+
+void ListNodesTest::testListMultipleNodes()
+{
+  m_application->sendShellCommand("ls bin dev");
+  const auto response = m_application->waitShellResponse();
+
+  const auto result0 = TestApplication::responseContainsText(response, "bin");
+  CPPUNIT_ASSERT(result0 == true);
+  const auto result1 = TestApplication::responseContainsText(response, "dev");
+  CPPUNIT_ASSERT(result1 == true);
+  const auto result2 = TestApplication::responseContainsText(response, "ls");
+  CPPUNIT_ASSERT(result2 == true);
+}
+
+void ListNodesTest::testNodeSize()
+{
+  m_application->sendShellCommand("ls -l");
+  const auto response = m_application->waitShellResponse();
+
+  const auto result0 = TestApplication::responseContainsText(response, "test.bin");
+  CPPUNIT_ASSERT(result0 == true);
+  const auto result1 = TestApplication::responseContainsText(response, "1572864");
+  CPPUNIT_ASSERT(result1 == true);
 }
 
 CPPUNIT_TEST_SUITE_REGISTRATION(ListNodesTest);

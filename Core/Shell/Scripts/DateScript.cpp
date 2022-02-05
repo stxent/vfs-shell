@@ -16,8 +16,9 @@ DateScript::DateScript(Script *parent, ArgumentIterator firstArgument, ArgumentI
 Result DateScript::run()
 {
   static const ArgParser::Descriptor descriptors[] = {
+      {"--alarm", nullptr, "show alarm time", 0, Arguments::alarmSetter},
       {"--help", nullptr, "show this help message and exit", 0, Arguments::helpSetter},
-      {"-a", "STRING", "set alarm to time described by STRING", 1, Arguments::alarmSetter},
+      {"-a", "STRING", "set alarm to time described by STRING", 1, Arguments::limitSetter},
       {"-s", "STRING", "set time described by STRING, format +\"%H:%M:%S %d.%m.%Y\"", 1, Arguments::timeSetter}
   };
 
@@ -34,13 +35,17 @@ Result DateScript::run()
   {
     return E_VALUE;
   }
-  else if (arguments.alarm != nullptr)
+  else if (arguments.limit != nullptr)
   {
-    return setAlarm(arguments.alarm);
+    return setAlarm(arguments.limit);
   }
   else if (arguments.time != nullptr)
   {
     return setTime(arguments.time);
+  }
+  else if (arguments.alarm)
+  {
+    return showAlarm();
   }
   else
   {
@@ -48,36 +53,10 @@ Result DateScript::run()
   }
 }
 
-Result DateScript::setAlarm(const char *inputString)
-{
-  time64_t timestamp;
-  Result res;
-
-  if (stringToTimestamp(inputString, &timestamp))
-    res = time().setAlarm(timestamp * 1000000);
-  else
-    res = E_VALUE;
-
-  return res;
-}
-
-Result DateScript::setTime(const char *inputString)
-{
-  time64_t timestamp;
-  Result res;
-
-  if (stringToTimestamp(inputString, &timestamp))
-    res = time().setTime(timestamp * 1000000);
-  else
-    res = E_VALUE;
-
-  return res;
-}
-
-Result DateScript::showTime()
+void DateScript::printTime(time64_t timestamp)
 {
   RtDateTime convertedTime;
-  rtMakeTime(&convertedTime, time().getTime() / 1000000);
+  rtMakeTime(&convertedTime, timestamp);
 
   const auto fill = tty().fill();
   const auto width = tty().width();
@@ -92,7 +71,63 @@ Result DateScript::showTime()
   tty() << "." << static_cast<unsigned int>(convertedTime.year);
   tty() << Terminal::EOL;
   tty() << width << fill;
+}
 
+Result DateScript::setAlarm(const char *inputString)
+{
+  time64_t timestamp;
+  Result res;
+
+  if (stringToTimestamp(inputString, &timestamp))
+  {
+    res = time().setAlarm(timestamp * 1000000);
+  }
+  else
+  {
+    tty() << name() << ": incorrect format" << Terminal::EOL;
+    res = E_VALUE;
+  }
+
+  return res;
+}
+
+Result DateScript::setTime(const char *inputString)
+{
+  time64_t timestamp;
+  Result res;
+
+  if (stringToTimestamp(inputString, &timestamp))
+  {
+    res = time().setTime(timestamp * 1000000);
+  }
+  else
+  {
+    tty() << name() << ": incorrect format" << Terminal::EOL;
+    res = E_VALUE;
+  }
+
+  return res;
+}
+
+Result DateScript::showAlarm()
+{
+  const auto timestamp = time().getAlarm();
+
+  if (timestamp != 0)
+  {
+    printTime(timestamp / 1000000);
+    return E_OK;
+  }
+  else
+  {
+    tty() << name() << ": alarm is not set" << Terminal::EOL;
+    return E_INVALID;
+  }
+}
+
+Result DateScript::showTime()
+{
+  printTime(time().getTime() / 1000000);
   return E_OK;
 }
 

@@ -47,6 +47,12 @@ Result Shell::onEventReceived(const ScriptEvent *event)
 
 Result Shell::run()
 {
+  if (!m_terminal.isInputReady())
+  {
+    // Input script not found or could not be opened
+    return E_ENTRY;
+  }
+
   const bool interactive = m_executable == nullptr;
   const bool echo = (interactive && strcmp(env()["ECHO"], "0") != 0) || strcmp(env()["DEBUG"], "0") != 0;
 
@@ -125,12 +131,17 @@ Result Shell::evaluate(char *command, size_t length, bool echo)
   {
     if (arguments[0][0] != '#')
     {
+      char text[16];
       Evaluator<ArgumentIterator> evaluator{this, std::cbegin(arguments), std::cbegin(arguments) + count};
 
       m_state = State::EXEC;
       res = evaluator.run();
       if (m_state != State::STOP)
         m_state = State::IDLE;
+
+      // Save result value
+      TerminalHelpers::int2str<int>(text, static_cast<int>(res));
+      env()["?"] = text;
 
       if (res != E_OK && echo)
         m_terminal << name() << ": command error " << ShellHelpers::ResultSerializer{res} << Terminal::EOL;

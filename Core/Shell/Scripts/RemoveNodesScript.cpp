@@ -73,7 +73,7 @@ void RemoveNodesScript::removeNode(const char *positionalArgument, bool recursiv
     else
     {
       // Directory node is ignored
-      tty() << name() << ": " << positionalArgument << ": hollow node ignored" << Terminal::EOL;
+      tty() << name() << ": " << positionalArgument << ": directory node ignored" << Terminal::EOL;
       m_result = E_ENTRY;
     }
 

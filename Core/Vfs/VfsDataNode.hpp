@@ -13,11 +13,15 @@
 class VfsDataNode: public VfsNode
 {
 public:
-  VfsDataNode(const char *, const void *, size_t, time64_t = 0, FsAccess = FS_ACCESS_READ | FS_ACCESS_WRITE);
+  VfsDataNode(const char *, time64_t = 0, FsAccess = FS_ACCESS_READ | FS_ACCESS_WRITE);
 
   virtual Result length(FsFieldType, FsLength *) override;
   virtual Result read(FsFieldType, FsLength, void *, size_t, size_t *) override;
   virtual Result write(FsFieldType, FsLength, const void *, size_t, size_t *) override;
+
+  bool reserve(size_t, char);
+  bool reserve(const void *, size_t);
+  bool reserve(const char *);
 
 private:
   static constexpr size_t INITIAL_LENGTH{16};

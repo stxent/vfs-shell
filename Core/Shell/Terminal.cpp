@@ -9,42 +9,42 @@
 
 Terminal &operator<<(Terminal &output, short value)
 {
-  return Terminal::serialize(output, static_cast<int_fast16_t>(value));
+  return Terminal::serialize(output, value);
 }
 
 Terminal &operator<<(Terminal &output, unsigned short value)
 {
-  return Terminal::serialize(output, static_cast<uint_fast16_t>(value));
+  return Terminal::serialize(output, value);
 }
 
 Terminal &operator<<(Terminal &output, int value)
 {
-  return Terminal::serialize(output, static_cast<int_fast16_t>(value));
+  return Terminal::serialize(output, value);
 }
 
 Terminal &operator<<(Terminal &output, unsigned int value)
 {
-  return Terminal::serialize(output, static_cast<uint_fast16_t>(value));
+  return Terminal::serialize(output, value);
 }
 
 Terminal &operator<<(Terminal &output, long value)
 {
-  return Terminal::serialize(output, static_cast<int_fast32_t>(value));
+  return Terminal::serialize(output, value);
 }
 
 Terminal &operator<<(Terminal &output, unsigned long value)
 {
-  return Terminal::serialize(output, static_cast<uint_fast32_t>(value));
+  return Terminal::serialize(output, value);
 }
 
 Terminal &operator<<(Terminal &output, long long value)
 {
-  return Terminal::serialize(output, static_cast<int_fast64_t>(value));
+  return Terminal::serialize(output, value);
 }
 
 Terminal &operator<<(Terminal &output, unsigned long long value)
 {
-  return Terminal::serialize(output, static_cast<uint_fast64_t>(value));
+  return Terminal::serialize(output, value);
 }
 
 Terminal &operator<<(Terminal &output, const char *buffer)
@@ -63,8 +63,11 @@ Terminal &operator<<(Terminal &output, Terminal::Color value)
 {
   if (output.m_coloration)
   {
-    const char high = value == Terminal::Color::WHITE ? '9' : '3';
-    const char low = static_cast<char>('0' + static_cast<int>(value));
+    const char high = value >= Terminal::Color::BRIGHT_BLACK ? '9' : '3';
+    char low = static_cast<char>('0' + static_cast<int>(value));
+
+    if (value >= Terminal::Color::BRIGHT_BLACK)
+      low -= static_cast<int>(Terminal::Color::BRIGHT_BLACK);
 
     const char buffer[] = {'\033', '[', high, low, 'm'};
     output.write(buffer, sizeof(buffer));
@@ -77,16 +80,16 @@ Terminal &operator<<(Terminal &output, Terminal::Control value)
 {
   switch (value)
   {
-    case Terminal::Control::EOL:
+    case Terminal::EOL:
       output.write("\r\n", 2);
       break;
 
-    case Terminal::Control::REGULAR:
+    case Terminal::RESET:
       if (output.m_coloration)
-        output.write("\033[22m", 5);
+        output.write("\033[0m", 4);
       break;
 
-    case Terminal::Control::BOLD:
+    case Terminal::BOLD:
       if (output.m_coloration)
         output.write("\033[1m", 4);
       break;

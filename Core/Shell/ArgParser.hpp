@@ -110,7 +110,7 @@ public:
     // Print usage info
     if (name != nullptr)
     {
-      tty << Terminal::BOLD << "Usage: " << Terminal::REGULAR << name;
+      tty << Terminal::BOLD << "Usage: " << Terminal::RESET << name;
 
       // Print brief information about optional arguments
       for (auto iter = firstDescriptor; iter != lastDescriptor; ++iter)
@@ -148,7 +148,7 @@ public:
     // Describe positional arguments
     if (maxPositionalNameLength > 0)
     {
-      tty << Terminal::BOLD << "Positional arguments:" << Terminal::REGULAR << Terminal::EOL;
+      tty << Terminal::BOLD << "Positional arguments:" << Terminal::RESET << Terminal::EOL;
 
       auto findNext = [lastDescriptor](DESC_ITER startDescriptor){
           return std::find_if(startDescriptor, lastDescriptor, PositionalArgumentFinder{});
@@ -170,13 +170,13 @@ public:
     // Describe optional arguments
     if (maxOptionalNameLength > 0)
     {
-      tty << Terminal::BOLD << "Optional arguments:" << Terminal::REGULAR << Terminal::EOL;
+      tty << Terminal::BOLD << "Optional arguments:" << Terminal::RESET << Terminal::EOL;
 
       for (auto iter = firstDescriptor; iter != lastDescriptor; ++iter)
       {
         if (iter->key != nullptr)
         {
-          tty << "  " << Terminal::BOLD << iter->key << Terminal::REGULAR;
+          tty << "  " << Terminal::BOLD << iter->key << Terminal::RESET;
           if (iter->name != nullptr)
             tty << " " << iter->name;
           printTrailingSpaces(tty, maxOptionalNameLength - computeNameLength(iter));
@@ -198,7 +198,7 @@ public:
       {
         const size_t argumentsLeft = static_cast<size_t>(lastArgument - currentArgument);
 
-        if (argumentsLeft >= optional->count)
+        if (argumentsLeft > optional->count)
           currentArgument += 1 + optional->count;
         else
           break;

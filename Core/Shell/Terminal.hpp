@@ -27,7 +27,7 @@ public:
   enum Control
   {
     EOL,
-    REGULAR,
+    RESET,
     BOLD
   };
 

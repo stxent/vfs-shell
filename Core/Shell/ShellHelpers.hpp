@@ -62,7 +62,7 @@ struct ShellHelpers
       }
 
       if (firstArgument == lastArgument)
-        return E_FULL;
+        return E_EMPTY;
 
       if (c == '"')
       {

@@ -10,9 +10,9 @@
 #include <cppunit/extensions/TestFactoryRegistry.h>
 #include <cppunit/ui/text/TestRunner.h>
 
-class ArgumentParserTest : public CPPUNIT_NS::TestFixture
+class ArgParserTest : public CPPUNIT_NS::TestFixture
 {
-  CPPUNIT_TEST_SUITE(ArgumentParserTest);
+  CPPUNIT_TEST_SUITE(ArgParserTest);
   CPPUNIT_TEST(testArgumentCounter);
   CPPUNIT_TEST(testOptionalBool);
   CPPUNIT_TEST(testOptionalInt);
@@ -27,15 +27,15 @@ public:
   void testOptionalInt();
 };
 
-void ArgumentParserTest::setUp()
+void ArgParserTest::setUp()
 {
 }
 
-void ArgumentParserTest::tearDown()
+void ArgParserTest::tearDown()
 {
 }
 
-void ArgumentParserTest::testArgumentCounter()
+void ArgParserTest::testArgumentCounter()
 {
   struct Arguments
   {
@@ -67,7 +67,7 @@ void ArgumentParserTest::testArgumentCounter()
   CPPUNIT_ASSERT(arguments1.counter == 0);
 }
 
-void ArgumentParserTest::testOptionalBool()
+void ArgParserTest::testOptionalBool()
 {
   struct Arguments
   {
@@ -98,7 +98,7 @@ void ArgumentParserTest::testOptionalBool()
   CPPUNIT_ASSERT(!incorrectArguments.option);
 }
 
-void ArgumentParserTest::testOptionalInt()
+void ArgParserTest::testOptionalInt()
 {
   struct Arguments
   {
@@ -137,6 +137,9 @@ void ArgumentParserTest::testOptionalInt()
       descriptors.cbegin(), descriptors.cend());
   CPPUNIT_ASSERT(incorrectArguments0.option == 1);
 
+  ArgParser::invoke(incorrectInput0.cbegin(), incorrectInput0.cend(), descriptors.cbegin(), descriptors.cend(),
+      [this](const char *){});
+
   static const std::array<const char *, 2> incorrectInput1{{
           "-o",
           "none"
@@ -153,7 +156,7 @@ void ArgumentParserTest::testOptionalInt()
   CPPUNIT_ASSERT(incorrectArguments2.option == 1);
 }
 
-CPPUNIT_TEST_SUITE_REGISTRATION(ArgumentParserTest);
+CPPUNIT_TEST_SUITE_REGISTRATION(ArgParserTest);
 
 int main(int, char *[])
 {

@@ -12,19 +12,32 @@
 class MockTimeProvider: public TimeProvider
 {
 public:
+  MockTimeProvider() :
+    m_alarm{0},
+    m_timestamp{0}
+  {
+  }
+
+  virtual time64_t getAlarm() override
+  {
+    return m_alarm;
+  }
+
   virtual time64_t getTime() override
   {
-    return 0;
+    return m_timestamp;
   }
 
-  virtual Result setAlarm(time64_t) override
+  virtual Result setAlarm(time64_t timestamp) override
   {
-    return E_INVALID;
+    m_alarm = timestamp;
+    return E_OK;
   }
 
-  virtual Result setTime(time64_t) override
+  virtual Result setTime(time64_t timestamp) override
   {
-    return E_INVALID;
+    m_timestamp = timestamp;
+    return E_OK;
   }
 
   static MockTimeProvider &instance()
@@ -32,6 +45,10 @@ public:
     static MockTimeProvider object;
     return object;
   }
+
+private:
+  time64_t m_alarm;
+  time64_t m_timestamp;
 };
 
 #endif // VFS_SHELL_CORE_SHELL_MOCKTIMEPROVIDER_HPP_

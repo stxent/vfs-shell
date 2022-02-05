@@ -8,6 +8,7 @@
 #include "Shell/MockTimeProvider.hpp"
 #include "Shell/Scripts/ExitScript.hpp"
 #include "Shell/Scripts/Shell.hpp"
+#include "Vfs/VfsDataNode.hpp"
 #include "Vfs/VfsHandle.hpp"
 #include <halm/platform/generic/signal_handler.h>
 #include <halm/platform/generic/udp.h>
@@ -15,13 +16,13 @@
 #include <signal.h>
 #include <uv.h>
 
-TestApplication::TestApplication(Interface *client, Interface *host) :
+TestApplication::TestApplication(Interface *client, Interface *host, bool echo) :
   m_caller{},
   m_client{client},
   m_host{host},
   m_filesystem{static_cast<FsHandle *>(init(VfsHandleClass, nullptr)), [](FsHandle *pointer){ deinit(pointer); }},
   m_terminal{m_client},
-  m_initializer{m_filesystem.get(), m_terminal, MockTimeProvider::instance(), false}
+  m_initializer{m_filesystem.get(), m_terminal, MockTimeProvider::instance(), echo}
 {
   CPPUNIT_ASSERT(m_client != nullptr);
   CPPUNIT_ASSERT(m_host != nullptr);
@@ -31,6 +32,24 @@ TestApplication::TestApplication(Interface *client, Interface *host) :
 TestApplication::SignalCaller::~SignalCaller()
 {
   raise(SIGUSR1);
+}
+
+void TestApplication::injectNode(const char *path, VfsNode *object)
+{
+  // Open base node
+
+  FsNode * const parent = fsOpenBaseNode(m_filesystem.get(), path);
+  CPPUNIT_ASSERT(parent != nullptr);
+
+  // Inject new node
+
+  const std::array<FsFieldDescriptor, 1> entryFields = {{
+      {&object, sizeof(object), static_cast<FsFieldType>(VfsNode::VFS_NODE_OBJECT)}
+  }};
+
+  const auto res = fsNodeCreate(parent, entryFields.data(), entryFields.size());
+  CPPUNIT_ASSERT(res == E_OK);
+  fsNodeFree(parent);
 }
 
 void TestApplication::makeDataNode(const char *path, size_t length, char fill)
@@ -96,10 +115,39 @@ void TestApplication::makeDataNode(const char *path, size_t length, char fill)
   fsNodeFree(node);
 }
 
+void TestApplication::makeDataNode(const char *path, const char *buffer, size_t length)
+{
+  const char * const name = fsExtractName(path);
+  CPPUNIT_ASSERT(name != nullptr);
+
+  auto node = new VfsDataNode{name};
+  CPPUNIT_ASSERT(node != nullptr);
+
+  const auto result = node->reserve(buffer, length);
+  CPPUNIT_ASSERT(result == true);
+
+  injectNode(path, node);
+}
+
+void TestApplication::makeDataNode(const char *path, const char *buffer)
+{
+  makeDataNode(path, buffer, strlen(buffer));
+}
+
+void TestApplication::sendShellBuffer(const char *buffer, size_t length)
+{
+  ifWrite(m_host, buffer, length);
+}
+
 void TestApplication::sendShellCommand(const char *command)
 {
   ifWrite(m_host, command, strlen(command));
   ifWrite(m_host, "\r\n", 2);
+}
+
+void TestApplication::sendShellText(const char *text)
+{
+  ifWrite(m_host, text, strlen(text));
 }
 
 std::vector<std::string> TestApplication::waitShellResponse(std::chrono::milliseconds timeout)
@@ -168,6 +216,10 @@ std::vector<std::string> TestApplication::waitShellResponse(std::chrono::millise
     line.clear();
   }
 
+  // TODO Remove
+  for (const auto &entry : response)
+    std::cout << entry.data() << std::endl;
+
   return response;
 }
 
@@ -232,10 +284,10 @@ void TestApplication::bootstrap()
   parent = static_cast<FsNode *>(fsHandleRoot(m_filesystem.get()));
   for (auto iter = std::begin(rootEntries); iter != std::end(rootEntries); ++iter)
   {
-    const FsFieldDescriptor entryFields[] = {
+    const std::array<FsFieldDescriptor, 1> entryFields = {{
         {&*iter, sizeof(*iter), static_cast<FsFieldType>(VfsNode::VFS_NODE_OBJECT)}
-    };
-    fsNodeCreate(parent, entryFields, ARRAY_SIZE(entryFields));
+    }};
+    fsNodeCreate(parent, entryFields.data(), entryFields.size());
   }
   fsNodeFree(parent);
 

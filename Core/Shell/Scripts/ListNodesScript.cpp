@@ -33,8 +33,7 @@ Terminal &operator<<(Terminal &output, ListNodesScript::HumanReadableAccess acce
   const char buffer[] = {
       access.directory ? 'd' : '-',
       access.value & FS_ACCESS_READ ? 'r' : '-',
-      access.value & FS_ACCESS_WRITE ? 'w' : '-',
-      '\0'
+      access.value & FS_ACCESS_WRITE ? 'w' : '-'
   };
 
   output.write(buffer, sizeof(buffer));
@@ -219,7 +218,7 @@ void ListNodesScript::printDirectoryContent(const char *positionalArgument)
 
       tty() << " ";
       if (hasDescendants)
-        tty() << Terminal::BOLD << Terminal::Color::BLUE << nodeName << Terminal::Color::WHITE << Terminal::REGULAR;
+        tty() << Terminal::BOLD << Terminal::Color::BLUE << nodeName << Terminal::RESET;
       else
         tty() << nodeName;
 

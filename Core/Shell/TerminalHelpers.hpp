@@ -25,7 +25,15 @@ public:
     BLUE,
     MAGENTA,
     CYAN,
-    WHITE
+    WHITE,
+    BRIGHT_BLACK,
+    BRIGHT_RED,
+    BRIGHT_GREEN,
+    BRIGHT_YELLOW,
+    BRIGHT_BLUE,
+    BRIGHT_MAGENTA,
+    BRIGHT_CYAN,
+    BRIGHT_WHITE
   };
 
   enum class Format
@@ -161,7 +169,7 @@ private:
 
     do
     {
-      const unsigned int remainder = static_cast<unsigned int>(value % 10);
+      const auto remainder = value % 10;
       *output++ = remainder + '0';
       value /= 10;
     }
@@ -179,7 +187,7 @@ private:
       char fill)
   {
     char * const output = value < 0 ? buffer + 1 : buffer;
-    char * const end = uint2dec<T>(output, abs(value), width, fill);
+    char * const end = uint2dec<typename std::make_unsigned<T>::type>(output, std::abs(value), width, fill);
 
     if (value < 0)
       *buffer = '-';

@@ -24,28 +24,36 @@ public:
 private:
   struct Arguments
   {
-    const char *alarm{nullptr};
+    const char *limit{nullptr};
     const char *time{nullptr};
+    bool alarm{false};
     bool help{false};
 
-    static void alarmSetter(void *object, const char *argument)
+    static void alarmSetter(void *object, const char *)
     {
-      static_cast<Arguments *>(object)->alarm = argument;
-    }
-
-    static void timeSetter(void *object, const char *argument)
-    {
-      static_cast<Arguments *>(object)->time = argument;
+      static_cast<Arguments *>(object)->alarm = true;
     }
 
     static void helpSetter(void *object, const char *)
     {
       static_cast<Arguments *>(object)->help = true;
     }
+
+    static void limitSetter(void *object, const char *argument)
+    {
+      static_cast<Arguments *>(object)->limit = argument;
+    }
+
+    static void timeSetter(void *object, const char *argument)
+    {
+      static_cast<Arguments *>(object)->time = argument;
+    }
   };
 
+  void printTime(time64_t);
   Result setAlarm(const char *);
   Result setTime(const char *);
+  Result showAlarm();
   Result showTime();
 
   static bool stringToTimestamp(const char *, time64_t *);

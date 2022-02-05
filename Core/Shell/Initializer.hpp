@@ -28,6 +28,7 @@ public:
     m_environment["DEBUG"] = "0";
     m_environment["ECHO"] = echoing ? "1" : "0";
     m_environment["SHELL"] = "sh";
+    m_environment["?"] = "0";
   }
 
   template<typename T, typename... ARGs>

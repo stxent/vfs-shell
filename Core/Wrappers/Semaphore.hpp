@@ -8,6 +8,7 @@
 #define VFS_SHELL_WRAPPERS_SEMAPHORE_HPP_
 
 #include <osw/semaphore.h>
+#include <cstdlib>
 
 namespace Os
 {

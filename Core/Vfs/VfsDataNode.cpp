@@ -5,21 +5,16 @@
  */
 
 #include "Vfs/VfsDataNode.hpp"
+#include <cstring>
+#include <cstdlib>
 
-VfsDataNode::VfsDataNode(const char *name, const void *data, size_t dataLength, time64_t timestamp, FsAccess access) :
+VfsDataNode::VfsDataNode(const char *name, time64_t timestamp, FsAccess access) :
   VfsNode{name, timestamp, access},
   m_dataCapacity{0},
   m_dataLength{0},
   m_dataBuffer{nullptr}
 {
-  if (dataLength > 0)
-  {
-    auto * const dataPosition = static_cast<const uint8_t *>(data);
-
-    reallocateDataBuffer(dataLength);
-    std::copy(dataPosition, dataPosition + dataLength, m_dataBuffer.get());
-    m_dataLength = dataLength;
-  }
+  // TODO Locks in read/write operations
 }
 
 Result VfsDataNode::length(FsFieldType type, FsLength *fieldLength)
@@ -82,14 +77,14 @@ bool VfsDataNode::reallocateDataBuffer(size_t length)
   while (dataCapacity < length)
     dataCapacity *= 2;
 
-  auto reallocatedDataBuffer = std::make_unique<uint8_t []>(dataCapacity);
+  auto reallocatedDataBuffer = static_cast<uint8_t *>(malloc(dataCapacity));
 
   if (reallocatedDataBuffer == nullptr)
     return false;
 
   if (m_dataLength > 0)
-    std::copy(m_dataBuffer.get(), m_dataBuffer.get() + m_dataLength, reallocatedDataBuffer.get());
-  m_dataBuffer.swap(reallocatedDataBuffer);
+    std::copy(m_dataBuffer.get(), m_dataBuffer.get() + m_dataLength, reallocatedDataBuffer);
+  m_dataBuffer.reset(reallocatedDataBuffer);
   m_dataCapacity = dataCapacity;
 
   return true;
@@ -114,4 +109,51 @@ Result VfsDataNode::writeDataBuffer(FsLength position, const void *buffer, size_
     *written = length;
 
   return E_OK;
+}
+
+bool VfsDataNode::reserve(size_t length, char fill)
+{
+  if (length > 0)
+  {
+    if (!reallocateDataBuffer(length))
+      return false;
+
+    std::fill(m_dataBuffer.get(), m_dataBuffer.get() + length, static_cast<uint8_t>(fill));
+    m_dataLength = length;
+  }
+  else
+  {
+    m_dataCapacity = 0;
+    m_dataLength = 0;
+    m_dataBuffer.reset();
+  }
+
+  return true;
+}
+
+bool VfsDataNode::reserve(const void *data, size_t length)
+{
+  if (length > 0)
+  {
+    auto * const position = static_cast<const uint8_t *>(data);
+
+    if (!reallocateDataBuffer(length))
+      return false;
+
+    std::copy(position, position + length, m_dataBuffer.get());
+    m_dataLength = length;
+  }
+  else
+  {
+    m_dataCapacity = 0;
+    m_dataLength = 0;
+    m_dataBuffer.reset();
+  }
+
+  return true;
+}
+
+bool VfsDataNode::reserve(const char *text)
+{
+  return reserve(text, text != nullptr ? strlen(text) : 0);
 }

@@ -13,6 +13,7 @@ class TimeProvider
 {
 public:
   virtual ~TimeProvider() = default;
+  virtual time64_t getAlarm() = 0;
   virtual time64_t getTime() = 0;
   virtual Result setAlarm(time64_t) = 0;
   virtual Result setTime(time64_t) = 0;
