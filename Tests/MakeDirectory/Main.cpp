@@ -5,6 +5,7 @@
  */
 
 #include "TestApplication.hpp"
+#include "Shell/Scripts/ChangeModeScript.hpp"
 #include "Shell/Scripts/GetEnvScript.hpp"
 #include "Shell/Scripts/ListNodesScript.hpp"
 #include "Shell/Scripts/MakeDirectoryScript.hpp"
@@ -37,6 +38,7 @@ public:
   {
     TestApplication::bootstrap();
 
+    m_initializer.attach<ChangeModeScript>();
     m_initializer.attach<GetEnvScript>();
     m_initializer.attach<ListNodesScript>();
     m_initializer.attach<MakeDirectoryScript>();
@@ -47,7 +49,10 @@ class MakeDirectoryTest: public CPPUNIT_NS::TestFixture
 {
   CPPUNIT_TEST_SUITE(MakeDirectoryTest);
   CPPUNIT_TEST(testErrorAlreadyExists);
+  CPPUNIT_TEST(testErrorEmptyCommand);
+  CPPUNIT_TEST(testErrorIncorrectParent);
   CPPUNIT_TEST(testErrorNoParent);
+  CPPUNIT_TEST(testErrorReadOnlyParent);
   CPPUNIT_TEST(testHelpMessage);
   CPPUNIT_TEST(testSimpleDirectoryCreation);
   CPPUNIT_TEST_SUITE_END();
@@ -57,7 +62,10 @@ public:
   void tearDown();
 
   void testErrorAlreadyExists();
+  void testErrorEmptyCommand();
+  void testErrorIncorrectParent();
   void testErrorNoParent();
+  void testErrorReadOnlyParent();
   void testHelpMessage();
   void testSimpleDirectoryCreation();
 
@@ -85,12 +93,9 @@ void MakeDirectoryTest::setUp()
   CPPUNIT_ASSERT(m_testInterface != nullptr);
 
   m_application = new TestMakeDirectoryApplication(m_appInterface, m_testInterface);
-  CPPUNIT_ASSERT(m_application != nullptr);
 
   m_loopThread = new std::thread{TestApplication::runEventLoop, m_loop};
-  CPPUNIT_ASSERT(m_loopThread != nullptr);
   m_appThread = new std::thread{TestApplication::runShell, m_application};
-  CPPUNIT_ASSERT(m_appThread != nullptr);
 
   m_application->waitShellResponse();
 }
@@ -119,6 +124,46 @@ void MakeDirectoryTest::testErrorAlreadyExists()
   m_application->sendShellCommand("getenv ?");
   const auto returnValue = m_application->waitShellResponse();
   const auto returnValueFound = TestApplication::responseContainsText(returnValue, std::to_string(E_EXIST));
+  CPPUNIT_ASSERT(returnValueFound == true);
+}
+
+void MakeDirectoryTest::testErrorEmptyCommand()
+{
+  m_application->sendShellCommand("mkdir");
+  m_application->waitShellResponse();
+
+  m_application->sendShellCommand("getenv ?");
+  const auto returnValue = m_application->waitShellResponse();
+  const auto returnValueFound = TestApplication::responseContainsText(returnValue, std::to_string(E_VALUE));
+  CPPUNIT_ASSERT(returnValueFound == true);
+}
+
+void MakeDirectoryTest::testErrorIncorrectParent()
+{
+  m_application->sendShellCommand("mkdir /bin/exit/foo");
+  const auto response = m_application->waitShellResponse();
+  const auto result = TestApplication::responseContainsText(response, "directory creation failed");
+  CPPUNIT_ASSERT(result == true);
+
+  m_application->sendShellCommand("getenv ?");
+  const auto returnValue = m_application->waitShellResponse();
+  const auto returnValueFound = TestApplication::responseContainsText(returnValue, std::to_string(E_INVALID));
+  CPPUNIT_ASSERT(returnValueFound == true);
+}
+
+void MakeDirectoryTest::testErrorReadOnlyParent()
+{
+  m_application->sendShellCommand("chmod -w /dev");
+  m_application->waitShellResponse();
+
+  m_application->sendShellCommand("mkdir /dev/foo");
+  const auto response = m_application->waitShellResponse();
+  const auto result = TestApplication::responseContainsText(response, "directory creation failed");
+  CPPUNIT_ASSERT(result == true);
+
+  m_application->sendShellCommand("getenv ?");
+  const auto returnValue = m_application->waitShellResponse();
+  const auto returnValueFound = TestApplication::responseContainsText(returnValue, std::to_string(E_ACCESS));
   CPPUNIT_ASSERT(returnValueFound == true);
 }
 

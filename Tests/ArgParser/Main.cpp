@@ -10,7 +10,7 @@
 #include <cppunit/extensions/TestFactoryRegistry.h>
 #include <cppunit/ui/text/TestRunner.h>
 
-class ArgParserTest : public CPPUNIT_NS::TestFixture
+class ArgParserTest: public CPPUNIT_NS::TestFixture
 {
   CPPUNIT_TEST_SUITE(ArgParserTest);
   CPPUNIT_TEST(testArgumentCounter);

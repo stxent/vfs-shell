@@ -5,6 +5,7 @@
  */
 
 #include "TestApplication.hpp"
+#include "Shell/Scripts/GetEnvScript.hpp"
 #include "Shell/Scripts/PrintRawDataScript.hpp"
 #include <cppunit/CompilerOutputter.h>
 #include <cppunit/extensions/HelperMacros.h>
@@ -35,6 +36,7 @@ public:
   {
     TestApplication::bootstrap();
 
+    m_initializer.attach<GetEnvScript>();
     m_initializer.attach<PrintRawDataScript<BUFFER_SIZE>>();
   }
 };
@@ -43,6 +45,7 @@ class PrintRawDataTest: public CPPUNIT_NS::TestFixture
 {
   CPPUNIT_TEST_SUITE(PrintRawDataTest);
   CPPUNIT_TEST(testDataPrinting);
+  CPPUNIT_TEST(testErrorNoNode);
   CPPUNIT_TEST(testHelpMessage);
   CPPUNIT_TEST_SUITE_END();
 
@@ -51,6 +54,7 @@ public:
   void tearDown();
 
   void testDataPrinting();
+  void testErrorNoNode();
   void testHelpMessage();
 
 private:
@@ -77,15 +81,12 @@ void PrintRawDataTest::setUp()
   CPPUNIT_ASSERT(m_testInterface != nullptr);
 
   m_application = new TestPrintRawDataApplication(m_appInterface, m_testInterface);
-  CPPUNIT_ASSERT(m_application != nullptr);
 
   m_application->makeDataNode("/testA.bin", 16, 'A');
   m_application->makeDataNode("/testB.bin", 256, 'z');
 
   m_loopThread = new std::thread{TestApplication::runEventLoop, m_loop};
-  CPPUNIT_ASSERT(m_loopThread != nullptr);
   m_appThread = new std::thread{TestApplication::runShell, m_application};
-  CPPUNIT_ASSERT(m_appThread != nullptr);
 
   m_application->waitShellResponse();
 }
@@ -112,6 +113,19 @@ void PrintRawDataTest::testDataPrinting()
   const auto response1 = m_application->waitShellResponse();
   const auto result1 = TestApplication::responseContainsText(response1, "zzzz");
   CPPUNIT_ASSERT(result1 == true);
+}
+
+void PrintRawDataTest::testErrorNoNode()
+{
+  m_application->sendShellCommand("cat /undefined");
+  const auto response = m_application->waitShellResponse();
+  const auto result = TestApplication::responseContainsText(response, "node not found");
+  CPPUNIT_ASSERT(result == true);
+
+  m_application->sendShellCommand("getenv ?");
+  const auto returnValue = m_application->waitShellResponse();
+  const auto returnValueFound = TestApplication::responseContainsText(returnValue, std::to_string(E_ENTRY));
+  CPPUNIT_ASSERT(returnValueFound == true);
 }
 
 void PrintRawDataTest::testHelpMessage()

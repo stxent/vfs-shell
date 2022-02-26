@@ -75,12 +75,9 @@ void EchoTest::setUp()
   CPPUNIT_ASSERT(m_testInterface != nullptr);
 
   m_application = new TestEchoApplication(m_appInterface, m_testInterface);
-  CPPUNIT_ASSERT(m_application != nullptr);
 
   m_loopThread = new std::thread{TestApplication::runEventLoop, m_loop};
-  CPPUNIT_ASSERT(m_loopThread != nullptr);
   m_appThread = new std::thread{TestApplication::runShell, m_application};
-  CPPUNIT_ASSERT(m_appThread != nullptr);
 
   m_application->waitShellResponse();
 }

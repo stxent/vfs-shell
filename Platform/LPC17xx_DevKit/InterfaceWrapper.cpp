@@ -12,10 +12,10 @@ static const InterfaceClass wrapperTable = {
     InterfaceWrapper::deinit,         // deinit
 
     InterfaceWrapper::setCallback,    // setCallback
-    InterfaceWrapper::getParam,       // head
-    InterfaceWrapper::setParam,       // free
-    InterfaceWrapper::read,           // length
-    InterfaceWrapper::write           // next
+    InterfaceWrapper::getParam,       // getParam
+    InterfaceWrapper::setParam,       // setParam
+    InterfaceWrapper::read,           // read
+    InterfaceWrapper::write           // write
 };
 
 const InterfaceClass * const InterfaceWrapper = &wrapperTable;

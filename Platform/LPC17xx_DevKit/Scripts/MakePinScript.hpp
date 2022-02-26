@@ -105,33 +105,33 @@ private:
       return E_EXIST;
     }
 
-    FsNode * const root = fsOpenBaseNode(fs(), absolutePath);
+    // Create VFS node
+    VfsNode *entry;
+    Result res;
 
-    if (root != nullptr)
+    // Initialize pin as output or input depending on the arguments of the command
+    if (output)
+      entry = new PinNode{port, pin, value, time().getTime()};
+    else
+      entry = new PinNode{port, pin, time().getTime()};
+
+    if (entry != nullptr)
     {
-      // Create VFS node
-      VfsNode *entry;
+      res = ShellHelpers::injectNode(fs(), entry, absolutePath);
 
-      // Initialize pin as output or input depending on the arguments of the command
-      if (output)
-        entry = new PinNode{fsExtractName(path), port, pin, value, time().getTime()};
-      else
-        entry = new PinNode{fsExtractName(path), port, pin, time().getTime()};
-
-      // Link VFS node to the existing file tree
-      const FsFieldDescriptor fields[] = {
-          {&entry, sizeof(entry), static_cast<FsFieldType>(VfsNode::VFS_NODE_OBJECT)},
-      };
-      const Result res = fsNodeCreate(root, fields, ARRAY_SIZE(fields));
-
-      fsNodeFree(root);
-      return res;
+      if (res != E_OK)
+      {
+        tty() << name() << ": node linking failed" << Terminal::EOL;
+        delete entry;
+      }
     }
     else
     {
-      tty() << name() << ": " << absolutePath << ": parent directory not found" << Terminal::EOL;
-      return E_ENTRY;
+      tty() << name() << ": node creation failed" << Terminal::EOL;
+      res = E_MEMORY;
     }
+
+    return res;
   }
 };
 

@@ -16,7 +16,7 @@ file(GLOB_RECURSE TEST_SOURCES_SHARED
 add_library(project_test_shared ${TEST_SOURCES_SHARED})
 target_compile_options(project_test_shared PUBLIC --coverage)
 target_include_directories(project_test_shared PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/Shared")
-target_link_libraries(project_test_shared PUBLIC project_core halm cppunit gcov)
+target_link_libraries(project_test_shared PUBLIC project_core dpm cppunit gcov)
 
 foreach(TEST_NAME ${TESTS_LIST})
     file(GLOB_RECURSE TEST_SOURCES

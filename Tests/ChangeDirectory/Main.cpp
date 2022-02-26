@@ -6,6 +6,7 @@
 
 #include "TestApplication.hpp"
 #include "Shell/Scripts/ChangeDirectoryScript.hpp"
+#include "Shell/Scripts/ChangeModeScript.hpp"
 #include "Shell/Scripts/GetEnvScript.hpp"
 #include "Shell/Scripts/ListNodesScript.hpp"
 #include <cppunit/CompilerOutputter.h>
@@ -38,6 +39,7 @@ public:
     TestApplication::bootstrap();
 
     m_initializer.attach<ChangeDirectoryScript>();
+    m_initializer.attach<ChangeModeScript>();
     m_initializer.attach<GetEnvScript>();
     m_initializer.attach<ListNodesScript>();
   }
@@ -47,6 +49,8 @@ class ChangeDirectoryTest: public CPPUNIT_NS::TestFixture
 {
   CPPUNIT_TEST_SUITE(ChangeDirectoryTest);
   CPPUNIT_TEST(testAbsolutePath);
+  CPPUNIT_TEST(testErrorAccessDenied);
+  CPPUNIT_TEST(testErrorIncorrectArguments);
   CPPUNIT_TEST(testErrorNoAbsolutePath);
   CPPUNIT_TEST(testErrorNoRelativePath);
   CPPUNIT_TEST(testHelpMessage);
@@ -58,6 +62,8 @@ public:
   void tearDown();
 
   void testAbsolutePath();
+  void testErrorAccessDenied();
+  void testErrorIncorrectArguments();
   void testErrorNoAbsolutePath();
   void testErrorNoRelativePath();
   void testHelpMessage();
@@ -87,12 +93,9 @@ void ChangeDirectoryTest::setUp()
   CPPUNIT_ASSERT(m_testInterface != nullptr);
 
   m_application = new TestChangeDirectoryApplication(m_appInterface, m_testInterface);
-  CPPUNIT_ASSERT(m_application != nullptr);
 
   m_loopThread = new std::thread{TestApplication::runEventLoop, m_loop};
-  CPPUNIT_ASSERT(m_loopThread != nullptr);
   m_appThread = new std::thread{TestApplication::runShell, m_application};
-  CPPUNIT_ASSERT(m_appThread != nullptr);
 
   m_application->waitShellResponse();
 }
@@ -119,11 +122,38 @@ void ChangeDirectoryTest::testAbsolutePath()
   CPPUNIT_ASSERT(result == true);
 }
 
+void ChangeDirectoryTest::testErrorAccessDenied()
+{
+  m_application->sendShellCommand("chmod -r /dev");
+  m_application->waitShellResponse();
+
+  m_application->sendShellCommand("cd /dev");
+  const auto response = m_application->waitShellResponse();
+  const auto result = TestApplication::responseContainsText(response, "permission denied");
+  CPPUNIT_ASSERT(result == true);
+
+  m_application->sendShellCommand("getenv ?");
+  const auto returnValue = m_application->waitShellResponse();
+  const auto returnValueFound = TestApplication::responseContainsText(returnValue, std::to_string(E_ACCESS));
+  CPPUNIT_ASSERT(returnValueFound == true);
+}
+
+void ChangeDirectoryTest::testErrorIncorrectArguments()
+{
+  m_application->sendShellCommand("cd");
+  m_application->waitShellResponse();
+
+  m_application->sendShellCommand("getenv ?");
+  const auto returnValue = m_application->waitShellResponse();
+  const auto returnValueFound = TestApplication::responseContainsText(returnValue, std::to_string(E_VALUE));
+  CPPUNIT_ASSERT(returnValueFound == true);
+}
+
 void ChangeDirectoryTest::testErrorNoAbsolutePath()
 {
   m_application->sendShellCommand("cd /undefined");
   const auto response = m_application->waitShellResponse();
-  const auto result = TestApplication::responseContainsText(response, "no such node");
+  const auto result = TestApplication::responseContainsText(response, "node not found");
   CPPUNIT_ASSERT(result == true);
 
   m_application->sendShellCommand("getenv ?");
@@ -136,7 +166,7 @@ void ChangeDirectoryTest::testErrorNoRelativePath()
 {
   m_application->sendShellCommand("cd undefined");
   const auto response = m_application->waitShellResponse();
-  const auto result = TestApplication::responseContainsText(response, "no such node");
+  const auto result = TestApplication::responseContainsText(response, "node not found");
   CPPUNIT_ASSERT(result == true);
 
   m_application->sendShellCommand("getenv ?");

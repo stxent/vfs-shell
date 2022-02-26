@@ -27,10 +27,10 @@ static void onSignalReceived(void *argument)
   uv_walk(static_cast<uv_loop_t *>(argument), onUvWalk, 0);
 }
 
-class TestCommandShellApplication: public TestApplication
+class TestShellCommandsApplication: public TestApplication
 {
 public:
-  TestCommandShellApplication(Interface *client, Interface *host) :
+  TestShellCommandsApplication(Interface *client, Interface *host) :
     TestApplication{client, host, true}
   {
   }
@@ -46,9 +46,9 @@ public:
   }
 };
 
-class CommandShellTest: public CPPUNIT_NS::TestFixture
+class ShellCommandsTest: public CPPUNIT_NS::TestFixture
 {
-  CPPUNIT_TEST_SUITE(CommandShellTest);
+  CPPUNIT_TEST_SUITE(ShellCommandsTest);
   CPPUNIT_TEST(testEmptyCommand);
   CPPUNIT_TEST(testErrorNoFileScript);
   CPPUNIT_TEST(testErrorNoScript);
@@ -85,7 +85,7 @@ private:
   std::thread *m_loopThread{nullptr};
 };
 
-void CommandShellTest::setUp()
+void ShellCommandsTest::setUp()
 {
   m_loop = uv_default_loop();
   CPPUNIT_ASSERT(m_loop != nullptr);
@@ -97,22 +97,19 @@ void CommandShellTest::setUp()
   m_testInterface = TestApplication::makeUdpInterface("127.0.0.1", 8001, 8000);
   CPPUNIT_ASSERT(m_testInterface != nullptr);
 
-  m_application = new TestCommandShellApplication(m_appInterface, m_testInterface);
-  CPPUNIT_ASSERT(m_application != nullptr);
+  m_application = new TestShellCommandsApplication(m_appInterface, m_testInterface);
 
   m_application->makeDataNode("/script.sh", "echo first");
   m_application->makeDataNode("/script_2.sh", "echo second");
   m_application->makeDataNode("/script_3.sh", "/bin/echo third");
 
   m_loopThread = new std::thread{TestApplication::runEventLoop, m_loop};
-  CPPUNIT_ASSERT(m_loopThread != nullptr);
   m_appThread = new std::thread{TestApplication::runShell, m_application};
-  CPPUNIT_ASSERT(m_appThread != nullptr);
 
   m_application->waitShellResponse();
 }
 
-void CommandShellTest::tearDown()
+void ShellCommandsTest::tearDown()
 {
   m_application->sendShellCommand("exit");
 
@@ -123,7 +120,7 @@ void CommandShellTest::tearDown()
   delete m_loopThread;
 }
 
-void CommandShellTest::testEmptyCommand()
+void ShellCommandsTest::testEmptyCommand()
 {
   m_application->sendShellCommand("");
   m_application->waitShellResponse();
@@ -134,7 +131,7 @@ void CommandShellTest::testEmptyCommand()
   CPPUNIT_ASSERT(returnValueFound == true);
 }
 
-void CommandShellTest::testErrorNoFileScript()
+void ShellCommandsTest::testErrorNoFileScript()
 {
   m_application->sendShellCommand("sh /undefined.sh");
   m_application->waitShellResponse();
@@ -145,7 +142,7 @@ void CommandShellTest::testErrorNoFileScript()
   CPPUNIT_ASSERT(returnValueFound == true);
 }
 
-void CommandShellTest::testErrorNoScript()
+void ShellCommandsTest::testErrorNoScript()
 {
   m_application->sendShellCommand("undefined");
   m_application->waitShellResponse();
@@ -156,7 +153,7 @@ void CommandShellTest::testErrorNoScript()
   CPPUNIT_ASSERT(returnValueFound == true);
 }
 
-void CommandShellTest::testFileScript()
+void ShellCommandsTest::testFileScript()
 {
   // Run a simple script
   m_application->sendShellCommand("sh /script.sh");
@@ -166,8 +163,10 @@ void CommandShellTest::testFileScript()
   CPPUNIT_ASSERT(result == true);
 }
 
-void CommandShellTest::testFileScriptOutput()
+void ShellCommandsTest::testFileScriptOutput()
 {
+  // TODO valgrind --tool=memcheck --leak-check=yes --show-reachable=yes
+
   // Run a simple script
   m_application->sendShellCommand("sh /script.sh > /output.txt");
   m_application->waitShellResponse();
@@ -179,8 +178,10 @@ void CommandShellTest::testFileScriptOutput()
   CPPUNIT_ASSERT(result == true);
 }
 
-void CommandShellTest::testFileScriptOutputAppend()
+void ShellCommandsTest::testFileScriptOutputAppend()
 {
+  // TODO valgrind --tool=memcheck --leak-check=yes --show-reachable=yes
+
   // Run a simple script
   m_application->sendShellCommand("sh /script.sh > /output.txt");
   m_application->waitShellResponse();
@@ -199,8 +200,10 @@ void CommandShellTest::testFileScriptOutputAppend()
   CPPUNIT_ASSERT(result1 == true);
 }
 
-void CommandShellTest::testFileScriptOverwrite()
+void ShellCommandsTest::testFileScriptOverwrite()
 {
+  // TODO valgrind --tool=memcheck --leak-check=yes --show-reachable=yes
+
   // Run a simple script
   m_application->sendShellCommand("sh /script.sh > /output.txt");
   m_application->waitShellResponse();
@@ -219,7 +222,7 @@ void CommandShellTest::testFileScriptOverwrite()
   CPPUNIT_ASSERT(result1 == true);
 }
 
-void CommandShellTest::testInnerShell()
+void ShellCommandsTest::testInnerShell()
 {
   // Start inner shell
   m_application->sendShellCommand("sh");
@@ -236,7 +239,7 @@ void CommandShellTest::testInnerShell()
   m_application->waitShellResponse();
 }
 
-void CommandShellTest::testScriptWithRelativePath()
+void ShellCommandsTest::testScriptWithRelativePath()
 {
   // Change PATH variable
   m_application->sendShellCommand("/bin/setenv PATH /dev");
@@ -253,7 +256,7 @@ void CommandShellTest::testScriptWithRelativePath()
   CPPUNIT_ASSERT(result == true);
 }
 
-CPPUNIT_TEST_SUITE_REGISTRATION(CommandShellTest);
+CPPUNIT_TEST_SUITE_REGISTRATION(ShellCommandsTest);
 
 int main(int, char *[])
 {

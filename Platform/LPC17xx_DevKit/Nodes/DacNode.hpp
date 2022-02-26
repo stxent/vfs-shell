@@ -14,8 +14,8 @@
 class DacNode: public VfsNode
 {
 public:
-  DacNode(const char *name, time64_t timestamp = 0, FsAccess access = FS_ACCESS_READ | FS_ACCESS_WRITE) :
-    VfsNode{name, timestamp, access},
+  DacNode(time64_t timestamp = 0, FsAccess access = FS_ACCESS_READ | FS_ACCESS_WRITE) :
+    VfsNode{timestamp, access},
     cache{0}
   {
     static const DacConfig config{cache, PIN(0, 26)};

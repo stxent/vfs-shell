@@ -15,7 +15,7 @@
 class VfsMountpoint: public VfsNode
 {
 public:
-  VfsMountpoint(const char *, FsHandle *, Interface *, time64_t = 0, FsAccess = FS_ACCESS_READ | FS_ACCESS_WRITE);
+  VfsMountpoint(FsHandle *, Interface *, time64_t = 0, FsAccess = FS_ACCESS_READ | FS_ACCESS_WRITE);
 
   virtual Result create(const FsFieldDescriptor *descriptors, size_t number) override;
   virtual void *head() override;

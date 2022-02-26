@@ -15,9 +15,17 @@ static constexpr const char *ifParamToName()
   switch (ID)
   {
     case IF_RX_AVAILABLE:
-      return "available";
+      return "rx_available";
+    case IF_RX_PENDING:
+      return "rx_pending";
+    case IF_RX_WATERMARK:
+      return "rx_watermark";
+    case IF_TX_AVAILABLE:
+      return "tx_available";
     case IF_TX_PENDING:
-      return "pending";
+      return "tx_pending";
+    case IF_TX_WATERMARK:
+      return "tx_watermark";
     case IF_ADDRESS:
       return "address";
     case IF_ADDRESS_64:
@@ -32,8 +40,6 @@ static constexpr const char *ifParamToName()
       return "size";
     case IF_SIZE_64:
       return "size";
-    case IF_STATUS:
-      return "status";
     default:
       return "undefined";
   }

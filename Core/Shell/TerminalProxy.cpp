@@ -63,7 +63,7 @@ size_t TerminalProxy::read(char *buffer, size_t length)
   if (m_input.node != nullptr)
   {
     size_t count;
-    const auto res = fsNodeRead(m_input.node.get(), FsFieldType::FS_NODE_DATA, m_input.position,
+    const Result res = fsNodeRead(m_input.node.get(), FsFieldType::FS_NODE_DATA, m_input.position,
         buffer, length, &count);
 
     if (res == E_OK)
@@ -101,7 +101,7 @@ size_t TerminalProxy::write(const char *buffer, size_t length)
   if (m_output.node != nullptr)
   {
     size_t count;
-    const auto res = fsNodeWrite(m_output.node.get(), FsFieldType::FS_NODE_DATA, m_output.position,
+    const Result res = fsNodeWrite(m_output.node.get(), FsFieldType::FS_NODE_DATA, m_output.position,
         buffer, length, &count);
 
     if (res == E_OK)

@@ -6,6 +6,7 @@
 
 #include "Shell/Settings.hpp"
 #include "Shell/ShellHelpers.hpp"
+#include "Vfs/Vfs.hpp"
 #include <xcore/fs/utils.h>
 
 Terminal &operator<<(Terminal &output, ShellHelpers::ResultSerializer container)
@@ -35,6 +36,36 @@ Terminal &operator<<(Terminal &output, ShellHelpers::ResultSerializer container)
     output << container.m_result;
 
   return output;
+}
+
+Result ShellHelpers::injectNode(FsHandle *handle, VfsNode *node, const char *path)
+{
+  if (node == nullptr)
+    return E_VALUE;
+
+  const char * const name = fsExtractName(path);
+
+  if (!name)
+    return E_VALUE;
+
+  if (!node->rename(name))
+    return E_MEMORY;
+
+  // Open base node
+  FsNode * const parent = fsOpenBaseNode(handle, path);
+
+  if (!parent)
+    return E_ENTRY;
+
+  // Inject new node
+  const std::array<FsFieldDescriptor, 1> entryFields = {{
+      {&node, sizeof(node), static_cast<FsFieldType>(VfsNode::VFS_NODE_OBJECT)}
+  }};
+
+  const auto res = fsNodeCreate(parent, entryFields.data(), entryFields.size());
+  fsNodeFree(parent);
+
+  return res;
 }
 
 FsNode *ShellHelpers::openScript(FsHandle *handle, Environment &env, const char *path)

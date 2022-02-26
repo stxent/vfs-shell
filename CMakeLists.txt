@@ -10,17 +10,17 @@ option(BUILD_TESTING "Enable testing support." OFF)
 option(USE_LTO "Enable Link Time Optimization." OFF)
 
 # Configure build flags
-set(FLAGS_DEFAULT "-fdata-sections -ffunction-sections -Wall -Wextra -Wshadow -pedantic")
+set(FLAGS_DEFAULT "-fdata-sections -ffunction-sections -Wall -Wextra -Wshadow -pedantic -fno-exceptions")
 
 if(NOT DEFINED BOARD)
     set(BOARD "Linux")
 endif()
 
 if(NOT ${BUILD_TESTING})
-    set(FLAGS_DEFAULT "${FLAGS_DEFAULT} -fno-rtti -fno-exceptions")
+    set(FLAGS_DEFAULT "${FLAGS_DEFAULT} -fno-rtti")
 endif()
 
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${FLAGS_DEFAULT} ${FLAGS_CPU}")
 set(CMAKE_SHARED_LIBRARY_LINK_CXX_FLAGS "")

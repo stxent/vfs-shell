@@ -89,7 +89,7 @@ private:
 
     // Open the destination node
     Result res;
-    FsNode * const dstNode = ShellHelpers::openSink(fs(), env(), time(), dst, false, &res);
+    FsNode * const dstNode = ShellHelpers::openSink(fs(), env(), time(), dst, true, &res);
     if (dstNode == nullptr)
     {
       tty() << name() << ": " << dst << ": open failed" << Terminal::EOL;
@@ -120,7 +120,7 @@ private:
       tty() << "write error at " << *position << Terminal::EOL;
 
       if (res == E_OK)
-        res = E_ERROR;
+        res = E_FULL;
     }
     else
       *position += bytesWritten;

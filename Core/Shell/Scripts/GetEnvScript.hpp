@@ -20,7 +20,10 @@ public:
   virtual Result run() override
   {
     if (m_firstArgument != m_lastArgument)
-      tty() << env()[*m_firstArgument] << Terminal::EOL;
+    {
+      const auto &variable = env()[*m_firstArgument];
+      tty() << variable << Terminal::EOL;
+    }
 
     return E_OK;
   }

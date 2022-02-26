@@ -20,7 +20,10 @@ public:
   virtual Result run() override
   {
     if (m_firstArgument != m_lastArgument && m_firstArgument + 1 != m_lastArgument)
-      env()[*m_firstArgument] = *(m_firstArgument + 1);
+    {
+      auto &variable = env()[*m_firstArgument];
+      variable = *(m_firstArgument + 1);
+    }
 
     return E_OK;
   }

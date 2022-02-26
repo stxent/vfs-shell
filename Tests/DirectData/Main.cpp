@@ -4,6 +4,7 @@
  * Project is distributed under the terms of the GNU General Public License v3.0
  */
 
+#include "LimitedTestNode.hpp"
 #include "SyncedTestNode.hpp"
 #include "TestApplication.hpp"
 #include "Shell/Scripts/DirectDataScript.hpp"
@@ -49,7 +50,7 @@ class DirectDataTest: public CPPUNIT_NS::TestFixture
   CPPUNIT_TEST_SUITE(DirectDataTest);
   CPPUNIT_TEST(testCopyInterrupt);
   CPPUNIT_TEST(testCopyReadError);
-  CPPUNIT_TEST(testCopyWriteError);
+  CPPUNIT_TEST(testErrorIncorrectArguments);
   CPPUNIT_TEST(testErrorIncorrectBlockSize);
   CPPUNIT_TEST(testErrorNoDestinationArgument);
   CPPUNIT_TEST(testErrorNoDestinationNode);
@@ -57,6 +58,7 @@ class DirectDataTest: public CPPUNIT_NS::TestFixture
   CPPUNIT_TEST(testErrorNoSourceNode);
   CPPUNIT_TEST(testHelpMessage);
   CPPUNIT_TEST(testMinimalNodeCopy);
+  CPPUNIT_TEST(testPartialNodeCopy);
   CPPUNIT_TEST(testPositionalNodeCopy);
   CPPUNIT_TEST_SUITE_END();
 
@@ -66,7 +68,7 @@ public:
 
   void testCopyInterrupt();
   void testCopyReadError();
-  void testCopyWriteError();
+  void testErrorIncorrectArguments();
   void testErrorIncorrectBlockSize();
   void testErrorNoDestinationArgument();
   void testErrorNoDestinationNode();
@@ -74,6 +76,7 @@ public:
   void testErrorNoSourceNode();
   void testHelpMessage();
   void testMinimalNodeCopy();
+  void testPartialNodeCopy();
   void testPositionalNodeCopy();
 
 private:
@@ -86,18 +89,19 @@ private:
   std::thread *m_appThread{nullptr};
   std::thread *m_loopThread{nullptr};
 
+  LimitedTestNode *m_nodePartialTest{nullptr};
   SyncedTestNode *m_nodeInterruptTest{nullptr};
   SyncedTestNode *m_nodeReadTest{nullptr};
-  SyncedTestNode *m_nodeWriteTest{nullptr};
   unsigned int m_iteration{0};
 
   Result onInterruptTestCallback();
   Result onReadFailureTestCallback();
-  Result onWriteFailureTestCallback();
 };
 
 void DirectDataTest::setUp()
 {
+  bool ok;
+
   m_loop = uv_default_loop();
   CPPUNIT_ASSERT(m_loop != nullptr);
 
@@ -109,30 +113,26 @@ void DirectDataTest::setUp()
   CPPUNIT_ASSERT(m_testInterface != nullptr);
 
   m_application = new TestDirectDataApplication(m_appInterface, m_testInterface);
-  CPPUNIT_ASSERT(m_application != nullptr);
 
-  m_nodeInterruptTest = new SyncedTestNode{"int_test.bin", [this](){ return onInterruptTestCallback(); }};
-  CPPUNIT_ASSERT(m_nodeInterruptTest != nullptr);
-  m_nodeInterruptTest->reserve(65536, 'z');
+  m_nodeInterruptTest = new SyncedTestNode{[this](){ return onInterruptTestCallback(); }};
+  ok = m_nodeInterruptTest->reserve(65536, 'z');
+  CPPUNIT_ASSERT(ok == true);
 
-  m_nodeReadTest = new SyncedTestNode{"read_test.bin", [this](){ return onReadFailureTestCallback(); }};
-  CPPUNIT_ASSERT(m_nodeReadTest != nullptr);
-  m_nodeReadTest->reserve(65536, 'a');
+  m_nodeReadTest = new SyncedTestNode{[this](){ return onReadFailureTestCallback(); }};
+  ok = m_nodeReadTest->reserve(65536, 'a');
+  CPPUNIT_ASSERT(ok == true);
 
-  m_nodeWriteTest = new SyncedTestNode{"write_test.bin", [this](){ return onWriteFailureTestCallback(); }};
-  CPPUNIT_ASSERT(m_nodeWriteTest != nullptr);
+  m_nodePartialTest = new LimitedTestNode{10000};
   m_iteration = 0;
 
-  m_application->injectNode("/int_test.bin", m_nodeInterruptTest);
-  m_application->injectNode("/read_test.bin", m_nodeReadTest);
-  m_application->injectNode("/write_test.bin", m_nodeWriteTest);
+  m_application->injectNode(m_nodePartialTest, "/partial_test.bin");
+  m_application->injectNode(m_nodeInterruptTest, "/int_test.bin");
+  m_application->injectNode(m_nodeReadTest, "/read_test.bin");
   m_application->makeDataNode("/empty.bin", 0, '\0');
   m_application->makeDataNode("/test.bin", 65536, 'A');
 
   m_loopThread = new std::thread{TestApplication::runEventLoop, m_loop};
-  CPPUNIT_ASSERT(m_loopThread != nullptr);
   m_appThread = new std::thread{TestApplication::runShell, m_application};
-  CPPUNIT_ASSERT(m_appThread != nullptr);
 
   m_application->waitShellResponse();
 }
@@ -186,20 +186,15 @@ void DirectDataTest::testCopyReadError()
   CPPUNIT_ASSERT(result1 == true);
 }
 
-void DirectDataTest::testCopyWriteError()
+void DirectDataTest::testErrorIncorrectArguments()
 {
-  m_application->sendShellCommand("dd --if /test.bin --of /write_test.bin --bs 1024");
+  m_application->sendShellCommand("dd incorrect");
   m_application->waitShellResponse();
 
   m_application->sendShellCommand("getenv ?");
   const auto returnValue = m_application->waitShellResponse();
-  const auto returnValueFound = TestApplication::responseContainsText(returnValue, std::to_string(E_INTERFACE));
+  const auto returnValueFound = TestApplication::responseContainsText(returnValue, std::to_string(E_VALUE));
   CPPUNIT_ASSERT(returnValueFound == true);
-
-  m_application->sendShellCommand("ls -l");
-  const auto response = m_application->waitShellResponse();
-  const auto result = TestApplication::responseContainsText(response, "4096");
-  CPPUNIT_ASSERT(result == true);
 }
 
 void DirectDataTest::testErrorIncorrectBlockSize()
@@ -288,6 +283,17 @@ void DirectDataTest::testMinimalNodeCopy()
   CPPUNIT_ASSERT(result1 == true);
 }
 
+void DirectDataTest::testPartialNodeCopy()
+{
+  m_application->sendShellCommand("dd --if /test.bin --of /partial_test.bin");
+  m_application->waitShellResponse();
+
+  m_application->sendShellCommand("ls -l");
+  const auto response = m_application->waitShellResponse();
+  const auto result = TestApplication::responseContainsText(response, "10000");
+  CPPUNIT_ASSERT(result == true);
+}
+
 void DirectDataTest::testPositionalNodeCopy()
 {
   // First pass - initial copy
@@ -333,16 +339,6 @@ Result DirectDataTest::onInterruptTestCallback()
 Result DirectDataTest::onReadFailureTestCallback()
 {
   m_nodeReadTest->post();
-
-  if (++m_iteration == 5)
-    return E_INTERFACE;
-  else
-    return E_OK;
-}
-
-Result DirectDataTest::onWriteFailureTestCallback()
-{
-  m_nodeWriteTest->post();
 
   if (++m_iteration == 5)
     return E_INTERFACE;

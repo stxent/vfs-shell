@@ -15,9 +15,9 @@ MockTerminal::MockTerminal(bool coloration) :
   bool result;
 
   result = byteQueueInit(&rxQueue, QUEUE_SIZE);
-  CPPUNIT_ASSERT(result = true);
+  CPPUNIT_ASSERT(result == true);
   result = byteQueueInit(&txQueue, QUEUE_SIZE);
-  CPPUNIT_ASSERT(result = true);
+  CPPUNIT_ASSERT(result == true);
 }
 
 MockTerminal::~MockTerminal()

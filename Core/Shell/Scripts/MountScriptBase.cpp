@@ -10,6 +10,7 @@
 #include "Vfs/VfsMountpoint.hpp"
 #include <xcore/fs/utils.h>
 #include <yaf/fat32.h>
+#include <new>
 
 MountScriptBase::MountScriptBase(Script *parent, ArgumentIterator firstArgument, ArgumentIterator lastArgument) :
   ShellScript{parent, firstArgument, lastArgument}
@@ -21,13 +22,6 @@ Result MountScriptBase::mount(const char *dst, Interface *interface)
   char path[Settings::PWD_LENGTH];
   fsJoinPaths(path, env()["PWD"], dst);
 
-  FsNode * const root = fsOpenBaseNode(fs(), path);
-  if (root == nullptr)
-  {
-    tty() << name() << ": " << path << ": parent directory not found" << Terminal::EOL;
-    return E_ENTRY;
-  }
-
   // Create FAT32 handle
   const Fat32Config config{interface, 4, 2};
   FsHandle * const partition = static_cast<FsHandle *>(init(FatHandle, &config));
@@ -35,29 +29,31 @@ Result MountScriptBase::mount(const char *dst, Interface *interface)
   if (partition != nullptr)
   {
     // Create VFS node
-    VfsNode * const mountpoint = new VfsMountpoint{fsExtractName(dst), partition, interface,
-        time().getTime(), FS_ACCESS_READ | FS_ACCESS_WRITE};
+    const auto mountpoint = static_cast<VfsMountpoint *>(malloc(sizeof(VfsMountpoint)));
+    Result res;
 
-    // Link VFS node to the existing file tree
-    const FsFieldDescriptor fields[] = {
-        {&mountpoint, sizeof(mountpoint), static_cast<FsFieldType>(VfsNode::VFS_NODE_OBJECT)},
-    };
-    const Result res = fsNodeCreate(root, fields, ARRAY_SIZE(fields));
-
-    if (res != E_OK)
+    if (mountpoint != nullptr)
     {
-      tty() << name() << ": node linking failed" << Terminal::EOL;
-      delete mountpoint;
+      new (mountpoint) VfsMountpoint{partition, interface, time().getTime()};
+      res = ShellHelpers::injectNode(fs(), mountpoint, path);
+
+      if (res != E_OK)
+        delete mountpoint;
+    }
+    else
+    {
       deinit(partition);
+      deinit(interface);
+      res = E_MEMORY;
     }
 
-    fsNodeFree(root);
     return res;
   }
   else
   {
     tty() << name() << ": partition mounting failed" << Terminal::EOL;
-    fsNodeFree(root);
+
+    deinit(interface);
     return E_INTERFACE;
   }
 }

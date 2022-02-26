@@ -10,13 +10,11 @@
 #include "Scripts/CpuFrequencyScript.hpp"
 #include "Scripts/MakeDacScript.hpp"
 #include "Scripts/MakePinScript.hpp"
-#include "Scripts/MountScript.hpp"
 #include "Scripts/RtcUtilScript.hpp"
 #include "Scripts/ShutdownScript.hpp"
 
 #include "Shell/Initializer.hpp"
 #include "Shell/Interfaces/InterfaceNode.hpp"
-#include "Shell/MockTimeProvider.hpp"
 #include "Shell/Scripts/ChangeDirectoryScript.hpp"
 #include "Shell/Scripts/ChecksumCrc32Script.hpp"
 #include "Shell/Scripts/CopyNodeScript.hpp"
@@ -30,6 +28,7 @@
 #include "Shell/Scripts/ListEnvScript.hpp"
 #include "Shell/Scripts/ListNodesScript.hpp"
 #include "Shell/Scripts/MakeDirectoryScript.hpp"
+#include "Shell/Scripts/MountScript.hpp"
 #include "Shell/Scripts/PrintHexDataScript.hpp"
 #include "Shell/Scripts/PrintRawDataScript.hpp"
 #include "Shell/Scripts/RemoveNodesScript.hpp"
@@ -144,7 +143,7 @@ public:
     m_initializer.attach<MakeDacScript>();
     m_initializer.attach<MakeDirectoryScript>();
     m_initializer.attach<MakePinScript>();
-    m_initializer.attach<MountScript<CardBuilder>>(m_sdioWrapper.get());
+    m_initializer.attach<MountScript<CardBuilder>>();
     m_initializer.attach<PrintHexDataScript<BUFFER_SIZE>>();
     m_initializer.attach<PrintRawDataScript<BUFFER_SIZE>>();
     m_initializer.attach<RemoveNodesScript>();
@@ -251,49 +250,35 @@ const SpiDmaConfig Application::s_spiConfig = {
 
 void Application::bootstrap()
 {
-  FsNode *parent;
+  VfsNode *node;
 
   // Root nodes
-  VfsNode *rootEntries[] = {
-      new VfsDirectory{"bin", RealTimeClock::instance().getTime()},
-      new VfsDirectory{"dev", RealTimeClock::instance().getTime()}
-  };
 
-  parent = static_cast<FsNode *>(fsHandleRoot(m_filesystem.get()));
-  for (auto iter = std::begin(rootEntries); iter != std::end(rootEntries); ++iter)
-  {
-    const FsFieldDescriptor entryFields[] = {
-        {&*iter, sizeof(*iter), static_cast<FsFieldType>(VfsNode::VFS_NODE_OBJECT)}
-    };
-    fsNodeCreate(parent, entryFields, ARRAY_SIZE(entryFields));
-  }
-  fsNodeFree(parent);
+  node = new VfsDirectory{RealTimeClock::instance().getTime()};
+  ShellHelpers::injectNode(m_filesystem.get(), node, "/bin");
+
+  node = new VfsDirectory{RealTimeClock::instance().getTime()};
+  ShellHelpers::injectNode(m_filesystem.get(), node, "/dev");
 
   // Device nodes
-  VfsNode *deviceEntries[] = {
-      new InterfaceNode<
-          ParamDesc<IfDisplayParameter, IF_DISPLAY_ORIENTATION, uint8_t>,
+
+  node = new InterfaceNode<
+          ParamDesc<IfDisplayParameter, IF_DISPLAY_ORIENTATION, DisplayOrientation>,
           ParamDesc<IfDisplayParameter, IF_DISPLAY_RESOLUTION, DisplayResolution, uint16_t, uint16_t>,
           ParamDesc<IfDisplayParameter, IF_DISPLAY_WINDOW, DisplayWindow, uint16_t, uint16_t, uint16_t, uint16_t>
-      >("display", m_display.get(), RealTimeClock::instance().getTime()),
-      new InterfaceNode<
+      >{m_display.get(), RealTimeClock::instance().getTime()};
+  ShellHelpers::injectNode(m_filesystem.get(), node, "/dev/display");
+
+  node = new InterfaceNode<
           ParamDesc<IfParameter, IF_RATE, uint32_t>
-      >("sdio", m_sdio.get(), RealTimeClock::instance().getTime()),
-      new InterfaceNode<
+      >{m_sdio.get(), RealTimeClock::instance().getTime()};
+  ShellHelpers::injectNode(m_filesystem.get(), node, "/dev/sdio");
+
+  node = new InterfaceNode<
           ParamDesc<SerialParameter, IF_SERIAL_PARITY, uint8_t>,
           ParamDesc<IfParameter, IF_RATE, uint32_t>
-      >("serial", m_serial.get(), RealTimeClock::instance().getTime())
-  };
-
-  parent = fsOpenNode(m_filesystem.get(), "/dev");
-  for (auto iter = std::begin(deviceEntries); iter != std::end(deviceEntries); ++iter)
-  {
-    const FsFieldDescriptor entryFields[] = {
-        {&*iter, sizeof(*iter), static_cast<FsFieldType>(VfsNode::VFS_NODE_OBJECT)}
-    };
-    fsNodeCreate(parent, entryFields, ARRAY_SIZE(entryFields));
-  }
-  fsNodeFree(parent);
+      >{m_serial.get(), RealTimeClock::instance().getTime()};
+  ShellHelpers::injectNode(m_filesystem.get(), node, "/dev/serial");
 }
 
 void Application::interfaceDeleter(Interface *pointer)

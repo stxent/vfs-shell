@@ -5,6 +5,7 @@
  */
 
 #include "TestApplication.hpp"
+#include "Shell/Scripts/ChangeModeScript.hpp"
 #include "Shell/Scripts/GetEnvScript.hpp"
 #include "Shell/Scripts/ListNodesScript.hpp"
 #include "Shell/Scripts/RemoveNodesScript.hpp"
@@ -37,6 +38,7 @@ public:
   {
     TestApplication::bootstrap();
 
+    m_initializer.attach<ChangeModeScript>();
     m_initializer.attach<GetEnvScript>();
     m_initializer.attach<ListNodesScript>();
     m_initializer.attach<RemoveNodesScript>();
@@ -50,6 +52,8 @@ class RemoveNodesTest: public CPPUNIT_NS::TestFixture
   CPPUNIT_TEST(testDirectoryRemove);
   CPPUNIT_TEST(testErrorDirectoryNode);
   CPPUNIT_TEST(testErrorNoNode);
+  CPPUNIT_TEST(testErrorReadOnlyNode);
+  CPPUNIT_TEST(testErrorReadOnlyParent);
   CPPUNIT_TEST(testHelpMessage);
   CPPUNIT_TEST_SUITE_END();
 
@@ -61,6 +65,8 @@ public:
   void testDirectoryRemove();
   void testErrorDirectoryNode();
   void testErrorNoNode();
+  void testErrorReadOnlyNode();
+  void testErrorReadOnlyParent();
   void testHelpMessage();
 
 private:
@@ -87,14 +93,11 @@ void RemoveNodesTest::setUp()
   CPPUNIT_ASSERT(m_testInterface != nullptr);
 
   m_application = new TestRemoveNodesApplication(m_appInterface, m_testInterface);
-  CPPUNIT_ASSERT(m_application != nullptr);
 
   m_application->makeDataNode("/test.bin", 65536, 'A');
 
   m_loopThread = new std::thread{TestApplication::runEventLoop, m_loop};
-  CPPUNIT_ASSERT(m_loopThread != nullptr);
   m_appThread = new std::thread{TestApplication::runShell, m_application};
-  CPPUNIT_ASSERT(m_appThread != nullptr);
 
   m_application->waitShellResponse();
 }
@@ -147,7 +150,7 @@ void RemoveNodesTest::testErrorDirectoryNode()
 
 void RemoveNodesTest::testErrorNoNode()
 {
-  m_application->sendShellCommand("rm /undefined");
+  m_application->sendShellCommand("rm /undefined /test");
   const auto response = m_application->waitShellResponse();
   const auto result = TestApplication::responseContainsText(response, "node not found");
   CPPUNIT_ASSERT(result == true);
@@ -155,6 +158,44 @@ void RemoveNodesTest::testErrorNoNode()
   m_application->sendShellCommand("getenv ?");
   const auto returnValue = m_application->waitShellResponse();
   const auto returnValueFound = TestApplication::responseContainsText(returnValue, std::to_string(E_ENTRY));
+  CPPUNIT_ASSERT(returnValueFound == true);
+}
+
+void RemoveNodesTest::testErrorReadOnlyNode()
+{
+  // Try to remove read-only node
+
+  m_application->sendShellCommand("chmod -w /test.bin");
+  m_application->waitShellResponse();
+
+  m_application->sendShellCommand("rm /test.bin");
+  const auto response = m_application->waitShellResponse();
+  const auto result = TestApplication::responseContainsText(response, "deletion failed");
+  CPPUNIT_ASSERT(result == true);
+
+  m_application->sendShellCommand("getenv ?");
+  const auto returnValue = m_application->waitShellResponse();
+  const auto returnValueFound = TestApplication::responseContainsText(returnValue, std::to_string(E_ACCESS));
+  CPPUNIT_ASSERT(returnValueFound == true);
+}
+
+void RemoveNodesTest::testErrorReadOnlyParent()
+{
+  m_application->makeDataNode("/dev/test_2.bin", 65536, 'z');
+
+  // Try to remove from read-only directory
+
+  m_application->sendShellCommand("chmod -w /dev");
+  m_application->waitShellResponse();
+
+  m_application->sendShellCommand("rm /dev/test_2.bin");
+  const auto response = m_application->waitShellResponse();
+  const auto result = TestApplication::responseContainsText(response, "deletion failed");
+  CPPUNIT_ASSERT(result == true);
+
+  m_application->sendShellCommand("getenv ?");
+  const auto returnValue = m_application->waitShellResponse();
+  const auto returnValueFound = TestApplication::responseContainsText(returnValue, std::to_string(E_ACCESS));
   CPPUNIT_ASSERT(returnValueFound == true);
 }
 

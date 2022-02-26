@@ -5,11 +5,12 @@
  */
 
 #include "MmfBuilder.hpp"
-#include "MountScript.hpp"
 #include "UnixTimeProvider.hpp"
 
 #include "Shell/Initializer.hpp"
+#include "Shell/Interfaces/InterfaceNode.hpp"
 #include "Shell/Scripts/ChangeDirectoryScript.hpp"
+#include "Shell/Scripts/ChangeModeScript.hpp"
 #include "Shell/Scripts/ChecksumCrc32Script.hpp"
 #include "Shell/Scripts/CopyNodeScript.hpp"
 #include "Shell/Scripts/DateScript.hpp"
@@ -21,6 +22,7 @@
 #include "Shell/Scripts/ListEnvScript.hpp"
 #include "Shell/Scripts/ListNodesScript.hpp"
 #include "Shell/Scripts/MakeDirectoryScript.hpp"
+#include "Shell/Scripts/MountScript.hpp"
 #include "Shell/Scripts/PrintHexDataScript.hpp"
 #include "Shell/Scripts/PrintRawDataScript.hpp"
 #include "Shell/Scripts/RemoveNodesScript.hpp"
@@ -31,44 +33,37 @@
 #include "Vfs/VfsHandle.hpp"
 
 #include <halm/platform/generic/console.h>
-#include <halm/platform/generic/udp.h>
 #include <osw/thread.h>
 
-#include <cassert>
-#include <cstdlib>
-#include <cstring>
-#include <fstream>
 #include <iostream>
 #include <uv.h>
 
 class Application
 {
 public:
-  Application(Interface *serial, bool echoing) :
+  Application(Interface *serial, bool echoing = true, char **partitions = nullptr, size_t count = 0) :
     m_serial{serial, [](Interface *pointer){ deinit(pointer); raise(SIGUSR1); }},
     m_filesystem{static_cast<FsHandle *>(init(VfsHandleClass, nullptr)), [](FsHandle *pointer){ deinit(pointer); }},
     m_terminal{m_serial.get()},
-    m_initializer{m_filesystem.get(), m_terminal, UnixTimeProvider::instance(), echoing}
+    m_initializer{m_filesystem.get(), m_terminal, UnixTimeProvider::instance(), echoing},
+    m_count{count},
+    m_partitions{partitions}
   {
     if (m_serial == nullptr || m_filesystem == nullptr)
       abort(); // TODO Rewrite
   }
 
-  Application() :
-    Application{static_cast<Interface *>(init(Console, nullptr)), true}
-  {
-  }
-
-  Application(const char *ip, uint16_t in, uint16_t out) :
-    Application{makeUdpInterface(ip, out, in), true}
+  Application(char **partitions = nullptr, size_t count = 0) :
+    Application{static_cast<Interface *>(init(Console, nullptr)), true, partitions, count}
   {
   }
 
   int run()
   {
-    bootstrap();
+    bootstrap(m_partitions, m_count);
 
     m_initializer.attach<ChangeDirectoryScript>();
+    m_initializer.attach<ChangeModeScript>();
     m_initializer.attach<ChecksumCrc32Script<BUFFER_SIZE>>();
     m_initializer.attach<CopyNodeScript<BUFFER_SIZE>>();
     m_initializer.attach<DateScript>();
@@ -80,7 +75,7 @@ public:
     m_initializer.attach<ListEnvScript>();
     m_initializer.attach<ListNodesScript>();
     m_initializer.attach<MakeDirectoryScript>();
-    m_initializer.attach<MountScript<MmfBuilder>>();
+    m_initializer.attach<MountScript<>>();
     m_initializer.attach<PrintHexDataScript<BUFFER_SIZE>>();
     m_initializer.attach<PrintRawDataScript<BUFFER_SIZE>>();
     m_initializer.attach<RemoveNodesScript>();
@@ -99,31 +94,31 @@ private:
   SerialTerminal m_terminal;
   Initializer m_initializer;
 
-  void bootstrap()
+  size_t m_count;
+  char **m_partitions;
+
+  void bootstrap(char **partitions = nullptr, size_t count = 0)
   {
-    FsNode *parent;
+    VfsNode *node;
 
     // Root nodes
-    VfsNode *rootEntries[] = {
-        new VfsDirectory{"bin", UnixTimeProvider::instance().getTime()},
-        new VfsDirectory{"dev", UnixTimeProvider::instance().getTime()}
-    };
+    node = new VfsDirectory{UnixTimeProvider::instance().getTime()};
+    ShellHelpers::injectNode(m_filesystem.get(), node, "/bin");
 
-    parent = static_cast<FsNode *>(fsHandleRoot(m_filesystem.get()));
-    for (auto iter = std::begin(rootEntries); iter != std::end(rootEntries); ++iter)
+    node = new VfsDirectory{UnixTimeProvider::instance().getTime()};
+    ShellHelpers::injectNode(m_filesystem.get(), node, "/dev");
+
+    for (size_t i = 0; i < std::max(count, static_cast<size_t>('z' - 'a')); ++i)
     {
-      const FsFieldDescriptor entryFields[] = {
-          {&*iter, sizeof(*iter), static_cast<FsFieldType>(VfsNode::VFS_NODE_OBJECT)}
-      };
-      fsNodeCreate(parent, entryFields, ARRAY_SIZE(entryFields));
-    }
-    fsNodeFree(parent);
-  }
+      const std::string path = std::string{"/dev/sd"} + static_cast<char>('a' + i);
+      Interface * const mmf = MmfBuilder::build(partitions[i]);
 
-  static Interface *makeUdpInterface(const char *ip, uint16_t in, uint16_t out)
-  {
-    const UdpConfig config{ip, out, in};
-    return static_cast<Interface *>(init(Udp, &config));
+      if (mmf != nullptr)
+      {
+        node = new InterfaceNode<>{mmf};
+        ShellHelpers::injectNode(m_filesystem.get(), node, path.data());
+      }
+    }
   }
 };
 
@@ -166,7 +161,7 @@ int main(int argc, char *argv[])
     uv_signal_init(loop, &listener);
     uv_signal_start(&listener, userSignalCallback, SIGUSR1);
 
-    Application * const application = new Application();
+    Application * const application = new Application(argv + 1, static_cast<size_t>(argc - 1));
     Thread appThread;
     threadInit(&appThread, 4096, 0, applicationWrapper, application);
     threadStart(&appThread);

@@ -64,12 +64,19 @@ public:
      * display a value: one character for values with loss of precision, one for the minus sign and
      * one for the null character.
      */
-    return std::numeric_limits<T>::digits10 + 3;
+    return std::numeric_limits<T>::digits10 + (std::is_signed_v<T> ? 1 : 0) + 2;
   }
 
   template<typename T>
-  static char *int2str(char *buffer, T value, Width width = Width{0}, Format format = Format::DEC,
-      Fill fill = Fill{' '})
+  static typename std::enable_if_t<std::is_enum_v<T>, char *> int2str(char *buffer, T value,
+      Width width = Width{0}, Format format = Format::DEC, Fill fill = Fill{' '})
+  {
+    return int2str(buffer, static_cast<std::underlying_type_t<T>>(value), width, format, fill);
+  }
+
+  template<typename T>
+  static typename std::enable_if_t<!std::is_enum_v<T>, char *> int2str(char *buffer, T value,
+      Width width = Width{0}, Format format = Format::DEC, Fill fill = Fill{' '})
   {
     if (format == Format::HEX)
       return int2hex(buffer, value, width.value, fill.value);
@@ -91,7 +98,7 @@ public:
     memcpy(nullTerminatedBuffer, buffer, chunkLength);
 
     char *lastConvertedCharacter;
-    const T value = strtol(nullTerminatedBuffer, &lastConvertedCharacter, 0);
+    const T value = static_cast<T>(strtol(nullTerminatedBuffer, &lastConvertedCharacter, 0));
 
     if (converted != nullptr)
       *converted = lastConvertedCharacter - nullTerminatedBuffer;
@@ -183,7 +190,7 @@ private:
   }
 
   template<typename T>
-  static typename std::enable_if_t<std::is_signed<T>::value, char *> int2dec(char *buffer, T value, size_t width,
+  static typename std::enable_if_t<std::is_signed_v<T>, char *> int2dec(char *buffer, T value, size_t width,
       char fill)
   {
     char * const output = value < 0 ? buffer + 1 : buffer;
@@ -196,7 +203,7 @@ private:
   }
 
   template<typename T>
-  static typename std::enable_if_t<std::is_unsigned<T>::value, char *> int2dec(char *buffer, T value, size_t width,
+  static typename std::enable_if_t<std::is_unsigned_v<T>, char *> int2dec(char *buffer, T value, size_t width,
       char fill)
   {
     return uint2dec<T>(buffer, value, width, fill);

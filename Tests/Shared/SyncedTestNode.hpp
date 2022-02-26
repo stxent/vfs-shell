@@ -14,12 +14,10 @@
 class SyncedTestNode: public VfsDataNode
 {
 public:
-  SyncedTestNode(const char *, std::function<Result ()> = nullptr);
+  SyncedTestNode(std::function<Result ()> = nullptr);
+  void post();
 
   virtual Result read(FsFieldType, FsLength, void *, size_t, size_t *) override;
-  virtual Result write(FsFieldType, FsLength, const void *, size_t, size_t *) override;
-
-  void post();
 
 private:
   Os::Semaphore m_sem;

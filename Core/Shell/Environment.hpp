@@ -7,90 +7,42 @@
 #ifndef VFS_SHELL_CORE_SHELL_ENVIRONMENT_HPP_
 #define VFS_SHELL_CORE_SHELL_ENVIRONMENT_HPP_
 
-#include <algorithm>
-#include <cstddef>
 #include <cstring>
 #include <functional>
 #include <memory>
+#include <new>
 #include <vector>
 
 class EnvironmentVariable
 {
 public:
   virtual ~EnvironmentVariable() = default;
-  virtual size_t getLength() const = 0;
   virtual const char *getName() const = 0;
 
-  operator char *()
-  {
-    return getDataBuffer();
-  }
-
-  operator const char *() const
-  {
-    return getDataBuffer();
-  }
-
-  void operator=(const char *buffer)
-  {
-    const size_t requiredLength = strlen(buffer) + 1;
-    const size_t availableLength = allocateDataBuffer(requiredLength);
-    const size_t endOfString = std::min(availableLength, requiredLength) - 1;
-
-    memcpy(getDataBuffer(), buffer, endOfString);
-    getDataBuffer()[endOfString] = '\0';
-  }
+  operator char *();
+  operator const char *() const;
+  void operator=(const char *buffer);
+  void operator delete(void *);
 
 protected:
   virtual size_t allocateDataBuffer(size_t) = 0;
   virtual char *getDataBuffer() = 0;
   virtual const char *getDataBuffer() const = 0;
-  // TODO Add static for an empty string
 };
 
 class DynamicEnvironmentVariable: public EnvironmentVariable
 {
 public:
-  DynamicEnvironmentVariable(const char *name) :
-    m_dataLength{0},
-    m_nameBuffer{std::make_unique<char []>(strlen(name) + 1)}
-  {
-    strcpy(m_nameBuffer.get(), name);
-    allocateDataBuffer(1);
-  }
+  DynamicEnvironmentVariable(const DynamicEnvironmentVariable &) = delete;
+  DynamicEnvironmentVariable &operator=(const DynamicEnvironmentVariable &) = delete;
 
-  virtual size_t getLength() const override
-  {
-    return m_dataLength;
-  }
-
-  virtual const char *getName() const override
-  {
-    return m_nameBuffer.get();
-  }
+  DynamicEnvironmentVariable(const char *name);
+  virtual const char *getName() const override;
 
 protected:
-  virtual size_t allocateDataBuffer(size_t length) override
-  {
-    if (m_dataLength < length)
-    {
-      m_dataLength = length;
-      m_dataBuffer = std::make_unique<char []>(m_dataLength);
-      memset(m_dataBuffer.get(), '\0', m_dataLength);
-    }
-
-    return m_dataLength;
-  }
-
-  virtual char *getDataBuffer() override
-  {
-    return m_dataBuffer.get();
-  }
-
-  virtual const char *getDataBuffer() const
-  {
-    return m_dataBuffer.get();
-  }
+  virtual size_t allocateDataBuffer(size_t length) override;
+  virtual char *getDataBuffer() override;
+  virtual const char *getDataBuffer() const override;
 
 private:
   size_t m_dataLength;
@@ -102,16 +54,14 @@ template<size_t LENGTH>
 class StaticEnvironmentVariable: public EnvironmentVariable
 {
 public:
+  StaticEnvironmentVariable(const StaticEnvironmentVariable<LENGTH> &) = delete;
+  StaticEnvironmentVariable<LENGTH> &operator=(const StaticEnvironmentVariable<LENGTH> &) = delete;
+
   StaticEnvironmentVariable(const char *name) :
     m_dataBuffer{'\0'},
     m_nameBuffer{std::make_unique<char []>(strlen(name) + 1)}
   {
     strcpy(m_nameBuffer.get(), name);
-  }
-
-  virtual size_t getLength() const override
-  {
-    return LENGTH;
   }
 
   virtual const char *getName() const override
@@ -130,7 +80,7 @@ protected:
     return m_dataBuffer;
   }
 
-  virtual const char *getDataBuffer() const
+  virtual const char *getDataBuffer() const override
   {
     return m_dataBuffer;
   }
@@ -142,6 +92,7 @@ private:
 
 class Environment
 {
+  StaticEnvironmentVariable<1> empty;
   std::vector<std::unique_ptr<EnvironmentVariable>> variables;
 
   auto find(const char *name)
@@ -151,26 +102,11 @@ class Environment
   }
 
 public:
-  EnvironmentVariable &operator[](const char *name)
-  {
-    // TODO Mutex
-    auto iter = find(name);
+  Environment();
 
-    if (iter == variables.end())
-    {
-      EnvironmentVariable * const variable = new DynamicEnvironmentVariable{name};
-      variables.emplace_back(variable);
-      return *variable;
-    }
-    else
-      return *(*iter).get();
-  }
-
-  void iterate(std::function<void (const char *, const char *)> callback)
-  {
-    for (auto iter = variables.begin(); iter != variables.end(); ++iter)
-      callback((*iter)->getName(), **iter);
-  }
+  EnvironmentVariable &operator[](const char *);
+  void iterate(std::function<void (const char *, const char *)>);
+  void purge(const char *);
 
   template<typename T>
   EnvironmentVariable &make(const char *name)
@@ -179,20 +115,19 @@ public:
 
     if (iter == variables.end())
     {
-      EnvironmentVariable * const variable = new T{name};
-      variables.emplace_back(variable);
-      return *variable;
+      const auto variable = static_cast<T *>(malloc(sizeof(T)));
+
+      if (variable != nullptr)
+      {
+        new (variable) T{name};
+        variables.emplace_back(variable);
+        return *variable;
+      }
+      else
+        return empty;
     }
-    else
-      return *(*iter).get();
-  }
 
-  void purge(const char *name)
-  {
-    auto iter = find(name);
-
-    if (iter != variables.end())
-      variables.erase(iter);
+    return *(*iter).get();
   }
 };
 

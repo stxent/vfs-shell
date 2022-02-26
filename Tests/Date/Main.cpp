@@ -45,6 +45,7 @@ class DateTest: public CPPUNIT_NS::TestFixture
 {
   CPPUNIT_TEST_SUITE(DateTest);
   CPPUNIT_TEST(testErrorIncorrectAlarm);
+  CPPUNIT_TEST(testErrorIncorrectArguments);
   CPPUNIT_TEST(testErrorIncorrectTime);
   CPPUNIT_TEST(testErrorNoAlarmSet);
   CPPUNIT_TEST(testGetTime);
@@ -58,6 +59,7 @@ public:
   void tearDown();
 
   void testErrorIncorrectAlarm();
+  void testErrorIncorrectArguments();
   void testErrorIncorrectTime();
   void testErrorNoAlarmSet();
   void testGetTime();
@@ -89,12 +91,9 @@ void DateTest::setUp()
   CPPUNIT_ASSERT(m_testInterface != nullptr);
 
   m_application = new TestDateApplication(m_appInterface, m_testInterface);
-  CPPUNIT_ASSERT(m_application != nullptr);
 
   m_loopThread = new std::thread{TestApplication::runEventLoop, m_loop};
-  CPPUNIT_ASSERT(m_loopThread != nullptr);
   m_appThread = new std::thread{TestApplication::runShell, m_application};
-  CPPUNIT_ASSERT(m_appThread != nullptr);
 
   m_application->waitShellResponse();
 }
@@ -116,6 +115,17 @@ void DateTest::testErrorIncorrectAlarm()
   const auto response = m_application->waitShellResponse();
   const auto result = TestApplication::responseContainsText(response, "incorrect format");
   CPPUNIT_ASSERT(result == true);
+
+  m_application->sendShellCommand("getenv ?");
+  const auto returnValue = m_application->waitShellResponse();
+  const auto returnValueFound = TestApplication::responseContainsText(returnValue, std::to_string(E_VALUE));
+  CPPUNIT_ASSERT(returnValueFound == true);
+}
+
+void DateTest::testErrorIncorrectArguments()
+{
+  m_application->sendShellCommand("date --undefined");
+  m_application->waitShellResponse();
 
   m_application->sendShellCommand("getenv ?");
   const auto returnValue = m_application->waitShellResponse();

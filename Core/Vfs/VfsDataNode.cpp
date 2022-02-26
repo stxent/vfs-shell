@@ -5,14 +5,14 @@
  */
 
 #include "Vfs/VfsDataNode.hpp"
-#include <cstring>
 #include <cstdlib>
+#include <cstring>
 
-VfsDataNode::VfsDataNode(const char *name, time64_t timestamp, FsAccess access) :
-  VfsNode{name, timestamp, access},
+VfsDataNode::VfsDataNode(time64_t timestamp, FsAccess access) :
+  VfsNode{timestamp, access},
   m_dataCapacity{0},
   m_dataLength{0},
-  m_dataBuffer{nullptr}
+  m_dataBuffer{nullptr, [](uint8_t pointer[]){ free(pointer); }}
 {
   // TODO Locks in read/write operations
 }
@@ -37,18 +37,18 @@ Result VfsDataNode::read(FsFieldType type, FsLength position, void *buffer, size
   {
     case FS_NODE_DATA:
     {
-      if (position <= static_cast<FsLength>(m_dataLength))
-      {
-        const size_t remaining = static_cast<size_t>(static_cast<FsLength>(m_dataLength) - position);
-        const size_t chunk = MIN(remaining, length);
-
-        std::copy(m_dataBuffer.get() + position, m_dataBuffer.get() + position + chunk, static_cast<uint8_t *>(buffer));
-        if (read)
-          *read = chunk;
-        return E_OK;
-      }
-      else
+      if (!(m_access & FS_ACCESS_READ))
+        return E_ACCESS;
+      if (position > static_cast<FsLength>(m_dataLength))
         return E_VALUE;
+
+      const size_t remaining = static_cast<size_t>(static_cast<FsLength>(m_dataLength) - position);
+      const size_t chunk = MIN(remaining, length);
+
+      memcpy(buffer, m_dataBuffer.get() + position, chunk);
+      if (read)
+        *read = chunk;
+      return E_OK;
     }
 
     default:
@@ -61,6 +61,9 @@ Result VfsDataNode::write(FsFieldType type, FsLength position, const void *buffe
   switch (type)
   {
     case FS_NODE_DATA:
+      if (!(m_access & FS_ACCESS_WRITE))
+        return E_ACCESS;
+
       return writeDataBuffer(position, buffer, length, written);
 
     default:
@@ -77,17 +80,20 @@ bool VfsDataNode::reallocateDataBuffer(size_t length)
   while (dataCapacity < length)
     dataCapacity *= 2;
 
-  auto reallocatedDataBuffer = static_cast<uint8_t *>(malloc(dataCapacity));
+  const auto reallocatedDataBuffer = static_cast<uint8_t *>(malloc(dataCapacity));
 
-  if (reallocatedDataBuffer == nullptr)
+  if (reallocatedDataBuffer != nullptr)
+  {
+    if (m_dataLength > 0)
+      memcpy(reallocatedDataBuffer, m_dataBuffer.get(), m_dataLength);
+
+    m_dataBuffer.reset(reallocatedDataBuffer);
+    m_dataCapacity = dataCapacity;
+
+    return true;
+  }
+  else
     return false;
-
-  if (m_dataLength > 0)
-    std::copy(m_dataBuffer.get(), m_dataBuffer.get() + m_dataLength, reallocatedDataBuffer);
-  m_dataBuffer.reset(reallocatedDataBuffer);
-  m_dataCapacity = dataCapacity;
-
-  return true;
 }
 
 Result VfsDataNode::writeDataBuffer(FsLength position, const void *buffer, size_t length, size_t *written)
@@ -101,7 +107,7 @@ Result VfsDataNode::writeDataBuffer(FsLength position, const void *buffer, size_
       return E_MEMORY;
   }
 
-  std::copy(bufferPosition, bufferPosition + length, m_dataBuffer.get() + static_cast<size_t>(position));
+  memcpy(m_dataBuffer.get() + static_cast<size_t>(position), bufferPosition, length);
   if (end > m_dataLength)
     m_dataLength = end;
 
@@ -118,7 +124,7 @@ bool VfsDataNode::reserve(size_t length, char fill)
     if (!reallocateDataBuffer(length))
       return false;
 
-    std::fill(m_dataBuffer.get(), m_dataBuffer.get() + length, static_cast<uint8_t>(fill));
+    memset(m_dataBuffer.get(), fill, length);
     m_dataLength = length;
   }
   else
@@ -140,7 +146,7 @@ bool VfsDataNode::reserve(const void *data, size_t length)
     if (!reallocateDataBuffer(length))
       return false;
 
-    std::copy(position, position + length, m_dataBuffer.get());
+    memcpy(m_dataBuffer.get(), position, length);
     m_dataLength = length;
   }
   else

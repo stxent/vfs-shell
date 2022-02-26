@@ -6,9 +6,9 @@
 
 #include "Vfs/VfsMountpoint.hpp"
 
-VfsMountpoint::VfsMountpoint(const char *name, FsHandle *targetHandle, Interface *targetInterface,
+VfsMountpoint::VfsMountpoint(FsHandle *targetHandle, Interface *targetInterface,
     time64_t timestamp, FsAccess access) :
-  VfsNode{name, timestamp, access},
+  VfsNode{timestamp, access},
   m_targetHandle{targetHandle, [](FsHandle *pointer){ deinit(pointer); }},
   m_targetInterface{targetInterface, [](Interface *pointer){ deinit(pointer); }}
 {
@@ -16,42 +16,42 @@ VfsMountpoint::VfsMountpoint(const char *name, FsHandle *targetHandle, Interface
 
 Result VfsMountpoint::create(const FsFieldDescriptor *descriptors, size_t number)
 {
-  FsNode * const rootNode = static_cast<FsNode *>(fsHandleRoot(m_targetHandle.get()));
+  FsNode * const root = static_cast<FsNode *>(fsHandleRoot(m_targetHandle.get()));
+  Result res = E_ERROR;
 
-  if (rootNode != nullptr)
+  if (root != nullptr)
   {
-    const Result res = fsNodeCreate(rootNode, descriptors, number);
-    fsNodeFree(rootNode);
-    return res;
+    res = fsNodeCreate(root, descriptors, number);
+    fsNodeFree(root);
   }
-  else
-    return E_ERROR;
+
+  return res;
 }
 
 void *VfsMountpoint::head()
 {
-  FsNode * const rootNode = static_cast<FsNode *>(fsHandleRoot(m_targetHandle.get()));
+  FsNode * const root = static_cast<FsNode *>(fsHandleRoot(m_targetHandle.get()));
+  FsNode *child = nullptr;
 
-  if (rootNode != nullptr)
+  if (root != nullptr)
   {
-    FsNode * const child = static_cast<FsNode *>(fsNodeHead(rootNode));
-    fsNodeFree(rootNode);
-    return child;
+    child = static_cast<FsNode *>(fsNodeHead(root));
+    fsNodeFree(root);
   }
-  else
-    return nullptr;
+
+  return child;
 }
 
 Result VfsMountpoint::remove(FsNode *node)
 {
-  FsNode * const rootNode = static_cast<FsNode *>(fsHandleRoot(m_targetHandle.get()));
+  FsNode * const root = static_cast<FsNode *>(fsHandleRoot(m_targetHandle.get()));
+  Result res = E_ERROR;
 
-  if (rootNode != nullptr)
+  if (root != nullptr)
   {
-    const Result res = fsNodeRemove(rootNode, node);
-    fsNodeFree(rootNode);
-    return res;
+    res = fsNodeRemove(root, node);
+    fsNodeFree(root);
   }
-  else
-    return E_ERROR;
+
+  return res;
 }

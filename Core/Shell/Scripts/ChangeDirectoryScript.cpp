@@ -51,7 +51,7 @@ Result ChangeDirectoryScript::changeDirectory(const char *relativePath)
   FsNode * const root = fsOpenNode(fs(), path);
   if (root == nullptr)
   {
-    tty() << name() << ": " << relativePath << ": no such node" << Terminal::EOL;
+    tty() << name() << ": " << relativePath << ": node not found" << Terminal::EOL;
     return E_ENTRY;
   }
 
@@ -59,14 +59,7 @@ Result ChangeDirectoryScript::changeDirectory(const char *relativePath)
   const Result res = fsNodeRead(root, FS_NODE_ACCESS, 0, &access, sizeof(access), nullptr);
   fsNodeFree(root);
 
-  if (res != E_OK)
-  {
-    tty() << name() << ": " << relativePath << ": error reading access attribute" << Terminal::EOL;
-    return res;
-  }
-
-  // TODO Hierarchical check
-  if (!(access & FS_ACCESS_READ))
+  if (res != E_OK || !(access & FS_ACCESS_READ))
   {
     tty() << name() << ": " << relativePath << ": permission denied" << Terminal::EOL;
     return E_ACCESS;

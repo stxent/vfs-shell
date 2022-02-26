@@ -34,22 +34,10 @@ TestApplication::SignalCaller::~SignalCaller()
   raise(SIGUSR1);
 }
 
-void TestApplication::injectNode(const char *path, VfsNode *object)
+void TestApplication::injectNode(VfsNode *node, const char *path)
 {
-  // Open base node
-
-  FsNode * const parent = fsOpenBaseNode(m_filesystem.get(), path);
-  CPPUNIT_ASSERT(parent != nullptr);
-
-  // Inject new node
-
-  const std::array<FsFieldDescriptor, 1> entryFields = {{
-      {&object, sizeof(object), static_cast<FsFieldType>(VfsNode::VFS_NODE_OBJECT)}
-  }};
-
-  const auto res = fsNodeCreate(parent, entryFields.data(), entryFields.size());
+  const auto res = ShellHelpers::injectNode(m_filesystem.get(), node, path);
   CPPUNIT_ASSERT(res == E_OK);
-  fsNodeFree(parent);
 }
 
 void TestApplication::makeDataNode(const char *path, size_t length, char fill)
@@ -65,14 +53,24 @@ void TestApplication::makeDataNode(const char *path, size_t length, char fill)
   CPPUNIT_ASSERT(parent != nullptr);
 
   // Create and open a new node
+  const FsAccess access = FS_ACCESS_READ | FS_ACCESS_WRITE;
+  const time64_t timestamp = MockTimeProvider::instance().getTime();
 
-  std::array<FsFieldDescriptor, 2> desc = {{
+  std::array<FsFieldDescriptor, 4> desc = {{
       {
+          &access,
+          sizeof(access),
+          FS_NODE_ACCESS
+      }, {
           name,
           strlen(name) + 1,
           FS_NODE_NAME
       }, {
-          0,
+          &timestamp,
+          sizeof(timestamp),
+          FS_NODE_TIME
+      }, {
+          nullptr,
           0,
           FS_NODE_DATA
       }
@@ -117,16 +115,13 @@ void TestApplication::makeDataNode(const char *path, size_t length, char fill)
 
 void TestApplication::makeDataNode(const char *path, const char *buffer, size_t length)
 {
-  const char * const name = fsExtractName(path);
-  CPPUNIT_ASSERT(name != nullptr);
-
-  auto node = new VfsDataNode{name};
+  auto node = new VfsDataNode{};
   CPPUNIT_ASSERT(node != nullptr);
 
   const auto result = node->reserve(buffer, length);
   CPPUNIT_ASSERT(result == true);
 
-  injectNode(path, node);
+  injectNode(node, path);
 }
 
 void TestApplication::makeDataNode(const char *path, const char *buffer)
@@ -150,7 +145,7 @@ void TestApplication::sendShellText(const char *text)
   ifWrite(m_host, text, strlen(text));
 }
 
-std::vector<std::string> TestApplication::waitShellResponse(std::chrono::milliseconds timeout)
+std::vector<std::string> TestApplication::waitShellResponse(size_t limit, std::chrono::milliseconds timeout)
 {
   enum class PromptState : uint8_t
   {
@@ -162,8 +157,9 @@ std::vector<std::string> TestApplication::waitShellResponse(std::chrono::millise
   const auto endtime = std::chrono::steady_clock::now() + timeout;
   std::vector<std::string> response;
   std::string line;
+  size_t received = 0;
   char text[1536];
-  PromptState prompt{PromptState::SYMBOL_0};
+  PromptState prompt = PromptState::SYMBOL_0;
 
   line.reserve(1536);
 
@@ -204,6 +200,10 @@ std::vector<std::string> TestApplication::waitShellResponse(std::chrono::millise
       }
     }
 
+    received += count;
+
+    if (limit != 0 && received >= limit)
+      break;
     if (prompt == PromptState::DONE)
       break;
 
@@ -273,23 +273,14 @@ void TestApplication::runShell(void *argument)
 
 void TestApplication::bootstrap()
 {
-  FsNode *parent;
-
   // Root nodes
-  VfsNode *rootEntries[] = {
-      new VfsDirectory{"bin", MockTimeProvider::instance().getTime()},
-      new VfsDirectory{"dev", MockTimeProvider::instance().getTime()}
+  VfsNode *entries[] = {
+      new VfsDirectory{MockTimeProvider::instance().getTime()},
+      new VfsDirectory{MockTimeProvider::instance().getTime()}
   };
 
-  parent = static_cast<FsNode *>(fsHandleRoot(m_filesystem.get()));
-  for (auto iter = std::begin(rootEntries); iter != std::end(rootEntries); ++iter)
-  {
-    const std::array<FsFieldDescriptor, 1> entryFields = {{
-        {&*iter, sizeof(*iter), static_cast<FsFieldType>(VfsNode::VFS_NODE_OBJECT)}
-    }};
-    fsNodeCreate(parent, entryFields.data(), entryFields.size());
-  }
-  fsNodeFree(parent);
+  injectNode(entries[0], "/bin");
+  injectNode(entries[1], "/dev");
 
   m_initializer.attach<ExitScript>();
   m_initializer.attach<Shell>();

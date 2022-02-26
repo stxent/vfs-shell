@@ -6,11 +6,16 @@
 
 #include "SyncedTestNode.hpp"
 
-SyncedTestNode::SyncedTestNode(const char *name, std::function<Result ()> callback) :
-  VfsDataNode{name},
+SyncedTestNode::SyncedTestNode(std::function<Result ()> callback) :
+  VfsDataNode{},
   m_sem{0},
   m_callback{callback}
 {
+}
+
+void SyncedTestNode::post()
+{
+  m_sem.post();
 }
 
 Result SyncedTestNode::read(FsFieldType type, FsLength position, void *buffer, size_t length, size_t *read)
@@ -28,26 +33,4 @@ Result SyncedTestNode::read(FsFieldType type, FsLength position, void *buffer, s
     return res;
 
   return VfsDataNode::read(type, position, buffer, length, read);
-}
-
-Result SyncedTestNode::write(FsFieldType type, FsLength position, const void *buffer, size_t length, size_t *written)
-{
-  Result res = E_OK;
-
-  if (type == FS_NODE_DATA)
-  {
-    if (m_callback)
-      res = m_callback();
-    m_sem.wait();
-  }
-
-  if (res != E_OK)
-    return res;
-
-  return VfsDataNode::write(type, position, buffer, length, written);
-}
-
-void SyncedTestNode::post()
-{
-  m_sem.post();
 }

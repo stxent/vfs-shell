@@ -47,7 +47,9 @@ class LineParserTest: public CPPUNIT_NS::TestFixture
   CPPUNIT_TEST(testCursorMovement);
   CPPUNIT_TEST(testDeleteKey);
   CPPUNIT_TEST(testDeleteKeyDiscard);
+  CPPUNIT_TEST(testIncorrectSequences);
   CPPUNIT_TEST(testInsertOverflow);
+  CPPUNIT_TEST(testSystemSequences);
   CPPUNIT_TEST_SUITE_END();
 
 public:
@@ -59,7 +61,9 @@ public:
   void testCursorMovement();
   void testDeleteKey();
   void testDeleteKeyDiscard();
+  void testIncorrectSequences();
   void testInsertOverflow();
+  void testSystemSequences();
 
 private:
   uv_loop_t *m_loop{nullptr};
@@ -85,12 +89,9 @@ void LineParserTest::setUp()
   CPPUNIT_ASSERT(m_testInterface != nullptr);
 
   m_application = new TestLineParserApplication(m_appInterface, m_testInterface);
-  CPPUNIT_ASSERT(m_application != nullptr);
 
   m_loopThread = new std::thread{TestApplication::runEventLoop, m_loop};
-  CPPUNIT_ASSERT(m_loopThread != nullptr);
   m_appThread = new std::thread{TestApplication::runShell, m_application};
-  CPPUNIT_ASSERT(m_appThread != nullptr);
 
   m_application->waitShellResponse();
 }
@@ -226,6 +227,24 @@ void LineParserTest::testDeleteKeyDiscard()
   CPPUNIT_ASSERT(result == true);
 }
 
+void LineParserTest::testIncorrectSequences()
+{
+  std::vector<std::string> response;
+  bool result;
+
+  // Send incorrect sequence
+  m_application->sendShellText("\x1B[\t~");
+  response = m_application->waitShellResponse(2);
+  result = TestApplication::responseContainsText(response, "\t~");
+  CPPUNIT_ASSERT(result == true);
+
+  // Send long sequence
+  m_application->sendShellText("\x1B[000000000000001~");
+  response = m_application->waitShellResponse(2);
+  result = TestApplication::responseContainsText(response, "1~");
+  CPPUNIT_ASSERT(result == true);
+}
+
 void LineParserTest::testInsertOverflow()
 {
   static constexpr size_t MAX_LINE_LENGTH{256};
@@ -240,6 +259,18 @@ void LineParserTest::testInsertOverflow()
   const auto response = m_application->waitShellResponse();
   const auto result = TestApplication::responseContainsText(response, "test");
   CPPUNIT_ASSERT(result == true);
+}
+
+void LineParserTest::testSystemSequences()
+{
+  // Send F0
+  m_application->sendShellText("\x1B[10~");
+
+  // Send Up
+  m_application->sendShellText("\x1B[A~");
+
+  // Send Down
+  m_application->sendShellText("\x1B[B~");
 }
 
 CPPUNIT_TEST_SUITE_REGISTRATION(LineParserTest);

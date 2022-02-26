@@ -13,18 +13,18 @@
 class PinNode: public VfsNode
 {
 public:
-  PinNode(const char *name, long port, long pin, bool value, time64_t timestamp = 0,
+  PinNode(long port, long pin, bool value, time64_t timestamp = 0,
       FsAccess access = FS_ACCESS_READ | FS_ACCESS_WRITE) :
-    VfsNode{name, timestamp, access},
+    VfsNode{timestamp, access},
     m_pin{pinInit(PIN(port, pin))}
   {
     if (pinValid(m_pin))
       pinOutput(m_pin, value);
   }
 
-  PinNode(const char *name, long port, long pin, time64_t timestamp = 0,
+  PinNode(long port, long pin, time64_t timestamp = 0,
       FsAccess access = FS_ACCESS_READ) :
-    VfsNode{name, timestamp, static_cast<FsAccess>(access & ~FS_ACCESS_WRITE)},
+    VfsNode{timestamp, static_cast<FsAccess>(access & ~FS_ACCESS_WRITE)},
     m_pin{pinInit(PIN(port, pin))}
   {
     if (pinValid(m_pin))

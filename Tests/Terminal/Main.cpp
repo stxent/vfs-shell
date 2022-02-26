@@ -5,6 +5,7 @@
  */
 
 #include "MockTerminal.hpp"
+#include "Shell/ShellHelpers.hpp"
 #include <cppunit/CompilerOutputter.h>
 #include <cppunit/extensions/HelperMacros.h>
 #include <cppunit/extensions/TestFactoryRegistry.h>
@@ -16,6 +17,7 @@ class TerminalTest : public CPPUNIT_NS::TestFixture
   CPPUNIT_TEST(testFontColor);
   CPPUNIT_TEST(testFontStyle);
   CPPUNIT_TEST(testMockTerminal);
+  CPPUNIT_TEST(testResultSerializer);
   CPPUNIT_TEST(testShortSerialization);
   CPPUNIT_TEST(testUnsignedShortSerialization);
   CPPUNIT_TEST(testIntSerialization);
@@ -33,6 +35,7 @@ public:
   void testFontColor();
   void testFontStyle();
   void testMockTerminal();
+  void testResultSerializer();
 
   void testShortSerialization()
   {
@@ -141,6 +144,18 @@ void TerminalTest::testMockTerminal()
 
   CPPUNIT_ASSERT(count == 4);
   CPPUNIT_ASSERT(input == target);
+}
+
+void TerminalTest::testResultSerializer()
+{
+  MockTerminal terminal{true};
+  std::string output;
+  std::string target;
+
+  terminal << ShellHelpers::ResultSerializer{E_RESULT_END};
+  output = terminal.hostRead();
+  target = std::to_string(E_RESULT_END);
+  CPPUNIT_ASSERT(output == target);
 }
 
 std::string TerminalTest::makeColorSeq(Terminal::Color color)

@@ -5,6 +5,7 @@
  */
 
 #include "TestApplication.hpp"
+#include "Shell/Scripts/GetEnvScript.hpp"
 #include "Shell/Scripts/PrintHexDataScript.hpp"
 #include <cppunit/CompilerOutputter.h>
 #include <cppunit/extensions/HelperMacros.h>
@@ -35,6 +36,7 @@ public:
   {
     TestApplication::bootstrap();
 
+    m_initializer.attach<GetEnvScript>();
     m_initializer.attach<PrintHexDataScript<BUFFER_SIZE>>();
   }
 };
@@ -43,6 +45,7 @@ class PrintHexDataTest: public CPPUNIT_NS::TestFixture
 {
   CPPUNIT_TEST_SUITE(PrintHexDataTest);
   CPPUNIT_TEST(testDataPrinting);
+  CPPUNIT_TEST(testErrorNoNode);
   CPPUNIT_TEST(testHelpMessage);
   CPPUNIT_TEST_SUITE_END();
 
@@ -51,6 +54,7 @@ public:
   void tearDown();
 
   void testDataPrinting();
+  void testErrorNoNode();
   void testHelpMessage();
 
 private:
@@ -77,15 +81,12 @@ void PrintHexDataTest::setUp()
   CPPUNIT_ASSERT(m_testInterface != nullptr);
 
   m_application = new TestPrintHexDataApplication(m_appInterface, m_testInterface);
-  CPPUNIT_ASSERT(m_application != nullptr);
 
   m_application->makeDataNode("/testA.bin", 16, 'A');
   m_application->makeDataNode("/testB.bin", 256, 'z');
 
   m_loopThread = new std::thread{TestApplication::runEventLoop, m_loop};
-  CPPUNIT_ASSERT(m_loopThread != nullptr);
   m_appThread = new std::thread{TestApplication::runShell, m_application};
-  CPPUNIT_ASSERT(m_appThread != nullptr);
 
   m_application->waitShellResponse();
 }
@@ -112,6 +113,19 @@ void PrintHexDataTest::testDataPrinting()
   const auto response1 = m_application->waitShellResponse();
   const auto result1 = TestApplication::responseContainsText(response1, "7a 7a 7a 7a");
   CPPUNIT_ASSERT(result1 == true);
+}
+
+void PrintHexDataTest::testErrorNoNode()
+{
+  m_application->sendShellCommand("hexdump /undefined");
+  const auto response = m_application->waitShellResponse();
+  const auto result = TestApplication::responseContainsText(response, "node not found");
+  CPPUNIT_ASSERT(result == true);
+
+  m_application->sendShellCommand("getenv ?");
+  const auto returnValue = m_application->waitShellResponse();
+  const auto returnValueFound = TestApplication::responseContainsText(returnValue, std::to_string(E_ENTRY));
+  CPPUNIT_ASSERT(returnValueFound == true);
 }
 
 void PrintHexDataTest::testHelpMessage()

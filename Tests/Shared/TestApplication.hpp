@@ -28,14 +28,15 @@ public:
   static void runEventLoop(void *);
   static void runShell(void *);
 
-  void injectNode(const char *, VfsNode *);
+  void injectNode(VfsNode *, const char *);
   void makeDataNode(const char *, size_t, char);
   void makeDataNode(const char *, const char *, size_t);
   void makeDataNode(const char *, const char *);
   void sendShellBuffer(const char *, size_t);
   void sendShellCommand(const char *);
   void sendShellText(const char *);
-  std::vector<std::string> waitShellResponse(std::chrono::milliseconds = std::chrono::milliseconds{1000});
+  std::vector<std::string> waitShellResponse(size_t = 0,
+      std::chrono::milliseconds = std::chrono::milliseconds{1000});
 
   static Interrupt *makeSignalListener(int, void (*)(void *), void *);
   static Interface *makeUdpInterface(const char *, uint16_t, uint16_t);

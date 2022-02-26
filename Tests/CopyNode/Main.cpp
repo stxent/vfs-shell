@@ -4,6 +4,7 @@
  * Project is distributed under the terms of the GNU General Public License v3.0
  */
 
+#include "LimitedTestNode.hpp"
 #include "TestApplication.hpp"
 #include "Shell/Scripts/CopyNodeScript.hpp"
 #include "Shell/Scripts/GetEnvScript.hpp"
@@ -50,6 +51,7 @@ class CopyNodeTest: public CPPUNIT_NS::TestFixture
   CPPUNIT_TEST(testErrorNoDestinationNode);
   CPPUNIT_TEST(testErrorNoSourceNode);
   CPPUNIT_TEST(testHelpMessage);
+  CPPUNIT_TEST(testPartialCopy);
   CPPUNIT_TEST(testSimpleCopy);
   CPPUNIT_TEST_SUITE_END();
 
@@ -61,6 +63,7 @@ public:
   void testErrorNoDestinationNode();
   void testErrorNoSourceNode();
   void testHelpMessage();
+  void testPartialCopy();
   void testSimpleCopy();
 
 private:
@@ -72,6 +75,8 @@ private:
 
   std::thread *m_appThread{nullptr};
   std::thread *m_loopThread{nullptr};
+
+  LimitedTestNode *m_nodeWriteTest{nullptr};
 };
 
 void CopyNodeTest::setUp()
@@ -87,14 +92,13 @@ void CopyNodeTest::setUp()
   CPPUNIT_ASSERT(m_testInterface != nullptr);
 
   m_application = new TestCopyNodeApplication(m_appInterface, m_testInterface);
-  CPPUNIT_ASSERT(m_application != nullptr);
+  m_nodeWriteTest = new LimitedTestNode{10000};
 
+  m_application->injectNode(m_nodeWriteTest, "/write_test.bin");
   m_application->makeDataNode("/test.bin", 65536, 'A');
 
   m_loopThread = new std::thread{TestApplication::runEventLoop, m_loop};
-  CPPUNIT_ASSERT(m_loopThread != nullptr);
   m_appThread = new std::thread{TestApplication::runShell, m_application};
-  CPPUNIT_ASSERT(m_appThread != nullptr);
 
   m_application->waitShellResponse();
 }
@@ -152,6 +156,17 @@ void CopyNodeTest::testHelpMessage()
   const auto response = m_application->waitShellResponse();
 
   const auto result = TestApplication::responseContainsText(response, "Usage");
+  CPPUNIT_ASSERT(result == true);
+}
+
+void CopyNodeTest::testPartialCopy()
+{
+  m_application->sendShellCommand("cp /test.bin /write_test.bin");
+  m_application->waitShellResponse();
+
+  m_application->sendShellCommand("ls -l");
+  const auto response = m_application->waitShellResponse();
+  const auto result = TestApplication::responseContainsText(response, "10000");
   CPPUNIT_ASSERT(result == true);
 }
 

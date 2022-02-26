@@ -13,6 +13,7 @@
 #include <cctype>
 
 class Terminal;
+class VfsNode;
 
 struct ShellHelpers
 {
@@ -25,6 +26,7 @@ struct ShellHelpers
   ShellHelpers(const ShellHelpers &) = delete;
   ShellHelpers &operator=(const ShellHelpers &) = delete;
 
+  static Result injectNode(FsHandle *, VfsNode *, const char *);
   static FsNode *openScript(FsHandle *, Environment &, const char *);
   static FsNode *openSink(FsHandle *, Environment &, TimeProvider &, const char *, bool, Result *);
   static FsNode *openSource(FsHandle *, Environment &, const char *);

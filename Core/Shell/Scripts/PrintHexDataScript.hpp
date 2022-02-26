@@ -104,7 +104,7 @@ private:
     }
     else
     {
-      tty() << name() << ": " << positionalArgument << ": open failed" << Terminal::EOL;
+      tty() << name() << ": " << positionalArgument << ": node not found" << Terminal::EOL;
       m_result = E_ENTRY;
     }
   }

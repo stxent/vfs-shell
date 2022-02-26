@@ -50,31 +50,32 @@ bool DataReader::isTerminateRequested()
   return false;
 }
 
-Result DataReader::read(void *buffer, FsNode *src, size_t blockSize, size_t blockCount, size_t skip,
+Result DataReader::read(void *buffer, FsNode *src, size_t blockSize, size_t blockCount, size_t skipBlocks,
     std::function<Result (const void *, size_t)> callback)
 {
-  FsLength srcPosition = static_cast<FsLength>(blockSize) * skip;
+  FsLength srcPosition = static_cast<FsLength>(blockSize) * skipBlocks;
   size_t blocks = 0;
   Result res = E_OK;
 
   // Copy file content
   while (!blockCount || blocks++ < blockCount)
   {
+    size_t bytesRead;
+
     if (isTerminateRequested())
     {
       res = E_TIMEOUT;
       break;
     }
 
-    size_t bytesRead;
+    res = fsNodeRead(src, FS_NODE_DATA, srcPosition, buffer, blockSize, &bytesRead);
 
-    if ((res = fsNodeRead(src, FS_NODE_DATA, srcPosition, buffer, blockSize, &bytesRead)) == E_EMPTY)
+    if (res == E_EMPTY || res == E_ADDRESS)
     {
       res = E_OK;
       break;
     }
-
-    if (res == E_OK)
+    else if (res == E_OK)
     {
       if (bytesRead > 0)
       {

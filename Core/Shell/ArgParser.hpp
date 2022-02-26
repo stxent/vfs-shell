@@ -190,6 +190,13 @@ public:
   static void invoke(ARG_ITER firstArgument, ARG_ITER lastArgument, DESC_ITER firstDescriptor,
       DESC_ITER lastDescriptor, std::function<void(const char *)> callback)
   {
+    size_t positionalCounter = 0;
+
+    auto findNextPositional = [lastDescriptor](DESC_ITER startDescriptor){
+        return std::find_if(startDescriptor, lastDescriptor, PositionalArgumentFinder{});
+    };
+    auto positional = findNextPositional(firstDescriptor);
+
     for (auto currentArgument = firstArgument; currentArgument != lastArgument;)
     {
       const auto optional = std::find_if(firstDescriptor, lastDescriptor, OptionalArgumentFinder{*currentArgument});
@@ -202,6 +209,16 @@ public:
           currentArgument += 1 + optional->count;
         else
           break;
+      }
+      else if (positional != lastDescriptor && positional->count > 0)
+      {
+        ++currentArgument;
+
+        if (++positionalCounter == positional->count)
+        {
+          positional = findNextPositional(positional + 1);
+          positionalCounter = 0;
+        }
       }
       else
       {

@@ -7,6 +7,7 @@
 #include "Vfs/Vfs.hpp"
 #include "Vfs/VfsHandle.hpp"
 #include <cstring>
+#include <cstdlib>
 
 const FsNodeClass VfsNodeProxy::table{
     sizeof(VfsNodeProxy), // size
@@ -24,19 +25,13 @@ const FsNodeClass VfsNodeProxy::table{
 };
 const FsNodeClass * const VfsNodeProxyClass = &VfsNodeProxy::table;
 
-VfsNode::VfsNode(const char *name, time64_t timestamp, FsAccess access) :
+VfsNode::VfsNode(time64_t timestamp, FsAccess access) :
   m_handle{nullptr},
   m_parent{nullptr},
+  m_name{nullptr, [](char pointer[]){ free(pointer); }},
   m_timestamp{timestamp},
   m_access{access}
 {
-  if (name != nullptr)
-  {
-    m_name = std::make_unique<char []>(strlen(name) + 1);
-    strcpy(m_name.get(), name);
-  }
-  else
-    m_name = nullptr;
 }
 
 Result VfsNode::create(const FsFieldDescriptor *, size_t)
@@ -98,9 +93,7 @@ Result VfsNode::read(FsFieldType type, FsLength position, void *buffer, size_t b
   {
     case FS_NODE_ACCESS:
     {
-      if (position)
-        return E_INVALID;
-      if (bufferLength != sizeof(m_access))
+      if (position || bufferLength != sizeof(m_access))
         return E_VALUE;
 
       memcpy(buffer, &m_access, sizeof(m_access));
@@ -110,9 +103,7 @@ Result VfsNode::read(FsFieldType type, FsLength position, void *buffer, size_t b
 
     case FS_NODE_ID:
     {
-      if (position)
-        return E_INVALID;
-      if (bufferLength != sizeof(void *))
+      if (position || bufferLength != sizeof(void *))
         return E_VALUE;
 
       void * const pointer = reinterpret_cast<void *>(this);
@@ -125,9 +116,7 @@ Result VfsNode::read(FsFieldType type, FsLength position, void *buffer, size_t b
     {
       const size_t nameLength = strlen(m_name.get()) + 1;
 
-      if (position)
-        return E_INVALID;
-      if (bufferLength < nameLength)
+      if (position || bufferLength < nameLength)
         return E_VALUE;
 
       strcpy(static_cast<char *>(buffer), m_name.get());
@@ -137,9 +126,7 @@ Result VfsNode::read(FsFieldType type, FsLength position, void *buffer, size_t b
 
     case FS_NODE_TIME:
     {
-      if (position)
-        return E_INVALID;
-      if (bufferLength != sizeof(m_timestamp))
+      if (position || bufferLength != sizeof(m_timestamp))
         return E_VALUE;
 
       memcpy(buffer, &m_timestamp, sizeof(m_timestamp));
@@ -170,9 +157,7 @@ Result VfsNode::write(FsFieldType type, FsLength position, const void *buffer, s
   {
     case FS_NODE_ACCESS:
     {
-      if (position)
-        return E_INVALID;
-      if (bufferLength != sizeof(m_access))
+      if (position || bufferLength != sizeof(m_access))
         return E_VALUE;
 
       memcpy(&m_access, buffer, sizeof(m_access));
@@ -182,9 +167,7 @@ Result VfsNode::write(FsFieldType type, FsLength position, const void *buffer, s
 
     case FS_NODE_TIME:
     {
-      if (position)
-        return E_INVALID;
-      if (bufferLength != sizeof(m_timestamp))
+      if (position || bufferLength != sizeof(m_timestamp))
         return E_VALUE;
 
       memcpy(&m_timestamp, buffer, sizeof(m_timestamp));
@@ -211,6 +194,34 @@ void VfsNode::leave()
 {
   m_handle = nullptr;
   m_parent = nullptr;
+}
+
+bool VfsNode::rename(const char *name)
+{
+  if (name != nullptr)
+  {
+    const auto reallocatedNameBuffer = static_cast<char *>(malloc(strlen(name) + 1));
+
+    if (reallocatedNameBuffer != nullptr)
+    {
+      strcpy(reallocatedNameBuffer, name);
+      m_name.reset(reallocatedNameBuffer);
+
+      return true;
+    }
+    else
+      return false;
+  }
+  else
+  {
+    m_name.reset(nullptr);
+    return true;
+  }
+}
+
+void VfsNode::operator delete(void *pointer)
+{
+  free(pointer);
 }
 
 VfsNodeProxy::VfsNodeProxy(VfsNode *node) :

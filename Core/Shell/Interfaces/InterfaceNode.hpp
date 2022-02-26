@@ -10,9 +10,11 @@
 #include "Shell/Interfaces/DisplayParameters.hpp"
 #include "Shell/Interfaces/InterfaceParameters.hpp"
 #include "Shell/Interfaces/SerialParameters.hpp"
+#include "Shell/TerminalHelpers.hpp"
 #include "Vfs/Vfs.hpp"
 #include "Vfs/VfsHandle.hpp"
 #include <xcore/interface.h>
+#include <cassert>
 #include <tuple>
 
 template<typename T, typename... ARGs>
@@ -161,9 +163,10 @@ class InterfaceParamNode: public VfsNode
 public:
   InterfaceParamNode(const char *name, Interface *interface,
       time64_t timestamp = 0, FsAccess access = FS_ACCESS_READ | FS_ACCESS_WRITE) :
-    VfsNode{name, timestamp, access},
+    VfsNode{timestamp, access},
     m_interface{interface}
   {
+    rename(name);
   }
 
   virtual Result length(FsFieldType type, FsLength *fieldLength) override
@@ -187,35 +190,36 @@ public:
     {
       case FS_NODE_DATA:
       {
+        if (!(m_access & FS_ACCESS_READ))
+          return E_ACCESS;
+        if (position)
+          return E_EMPTY;
+
         Result res;
+        Type value;
 
-        if (!position)
+        if ((res = ifGetParam(m_interface, static_cast<IfParameter>(T::id), &value)) == E_OK)
         {
-          Type value;
+          const auto count = T::unpack(value, static_cast<char *>(buffer), bufferLength);
 
-          if ((res = ifGetParam(m_interface, static_cast<IfParameter>(T::id), &value)) == E_OK)
+          if (count > 0)
           {
-            const auto count = T::unpack(value, static_cast<char *>(buffer), bufferLength);
-
-            if (count > 0)
-            {
-              if (bytesRead != nullptr)
-                *bytesRead = count;
-              res = E_OK;
-            }
-            else
-              res = E_FULL;
+            if (bytesRead != nullptr)
+              *bytesRead = count;
+            res = E_OK;
           }
+          else
+            res = E_VALUE;
         }
-        else
-          res = E_EMPTY;
 
         return res;
       }
 
       default:
-        return VfsNode::read(type, position, buffer, bufferLength, bytesRead);
+        break;
     }
+
+    return VfsNode::read(type, position, buffer, bufferLength, bytesRead);
   }
 
   virtual Result write(FsFieldType type, FsLength position, const void *buffer, size_t bufferLength,
@@ -225,6 +229,11 @@ public:
     {
       case FS_NODE_DATA:
       {
+        if (!(m_access & FS_ACCESS_WRITE))
+          return E_ACCESS;
+        if (position)
+          return E_FULL;
+
         size_t count;
         const auto value = T::pack(static_cast<const char *>(buffer), bufferLength, &count);
 
@@ -240,6 +249,9 @@ public:
         else
         {
           // Silently accept all nonsensical data to work correctly with output of echo-like scripts
+          if (bytesWritten != nullptr)
+            *bytesWritten = count;
+
           return E_OK;
         }
       }
@@ -269,37 +281,67 @@ class InterfaceNode: public VfsNode
     updateLinksImpl<N + 1>(handle, node);
   }
 
+  template<std::size_t N>
+  typename std::enable_if_t<N == 0, void *> headImpl()
+  {
+    return nullptr;
+  }
+
+  template<std::size_t N>
+  typename std::enable_if_t<N != 0, void *> headImpl()
+  {
+    if (m_access & FS_ACCESS_READ)
+    {
+      VfsHandle::Locker locker(*m_handle);
+      return m_handle->makeNodeProxy(&std::get<0>(m_parameters));
+    }
+
+    return nullptr;
+  }
+
   template<std::size_t N = 0>
-  typename std::enable_if_t<N == sizeof...(ARGs) - 1, VfsNode *> fetchImpl(VfsNode *)
+  typename std::enable_if_t<N + 1 >= sizeof...(ARGs), VfsNode *> fetchImpl(VfsNode *)
   {
     return nullptr;
   }
 
   template<std::size_t N = 0>
-  typename std::enable_if_t<N < sizeof...(ARGs) - 1, VfsNode *> fetchImpl(VfsNode *current)
+  typename std::enable_if_t<N + 1 < sizeof...(ARGs), VfsNode *> fetchImpl(VfsNode *current)
   {
-    return &std::get<N>(m_parameters) == current ? &std::get<N + 1>(m_parameters) : fetchImpl<N + 1>(current);
+    if (m_access & FS_ACCESS_READ)
+    {
+      if (&std::get<N>(m_parameters) == current)
+        return &std::get<N + 1>(m_parameters);
+      else
+        return fetchImpl<N + 1>(current);
+    }
+
+    return nullptr;
   }
 
 public:
-  InterfaceNode(const char *name, Interface *interface, time64_t timestamp = 0,
+  InterfaceNode(Interface *interface, time64_t timestamp = 0,
       FsAccess access = FS_ACCESS_READ | FS_ACCESS_WRITE) :
-    VfsNode{name, timestamp, access},
-    m_interface{interface},
-    m_parameters{InterfaceParamNode<ARGs>{ARGs::name(), interface, timestamp, access}...}
+    VfsNode{timestamp, access},
+    m_parameters{InterfaceParamNode<ARGs>{ARGs::name(), interface, timestamp, access}...},
+    m_interface{interface}
   {
-    static_assert(sizeof...(ARGs) > 0, "No parameter nodes defined");
+    uint64_t tmp;
+
+    size32 = ifGetParam(m_interface, IF_SIZE, &tmp) == E_OK;
+    size64 = ifGetParam(m_interface, IF_SIZE_64, &tmp) == E_OK;
+
+    updateLinksImpl(nullptr, this);
   }
 
   virtual void *head() override
   {
-    VfsHandle::Locker locker(*m_handle);
-    return m_handle->makeNodeProxy(&std::get<0>(m_parameters));
+    return headImpl<sizeof...(ARGs)>();
   }
 
   virtual VfsNode *fetch(VfsNode *current) override
   {
-    return fetchImpl(current);
+    return fetchImpl<0>(current);
   }
 
   virtual void enter(VfsHandle *handle, VfsNode *node) override
@@ -311,52 +353,120 @@ public:
   virtual void leave() override
   {
     VfsNode::leave();
-    updateLinksImpl(nullptr, nullptr);
+    updateLinksImpl(nullptr, this);
   }
 
   virtual Result read(FsFieldType type, FsLength position, void *buffer, size_t bufferLength,
       size_t *bytesRead) override
   {
+    switch (static_cast<VfsNode::VfsFieldType>(type))
+    {
+      case VFS_NODE_INTERFACE:
+      {
+        if (position || bufferLength != sizeof(m_interface))
+          return E_VALUE;
+
+        memcpy(buffer, &m_interface, sizeof(m_interface));
+        if (bytesRead != nullptr)
+          *bytesRead = sizeof(m_interface);
+        return E_OK;
+      }
+
+      default:
+        break;
+    }
+
+    Result res = E_OK;
+
     switch (type)
     {
       case FS_NODE_DATA:
       {
+        if (!(m_access & FS_ACCESS_WRITE))
+        {
+          res = E_ACCESS;
+          break;
+        }
+
+        if (size64)
+          res = setInterfacePosition<uint64_t>(position);
+        else if (size32)
+          res = setInterfacePosition<uint32_t>(position);
+
+        if (res != E_OK)
+          break;
+
         const auto count = ifRead(m_interface, buffer, bufferLength);
 
         if (bytesRead != nullptr)
           *bytesRead = count;
 
-        return (bufferLength == 0 || count > 0) ? E_OK : E_INTERFACE;
+        res = (bufferLength == 0 || count > 0) ? E_OK : E_EMPTY;
+        break;
       }
 
       default:
-        return VfsNode::read(type, position, buffer, bufferLength, bytesRead);
+        res = VfsNode::read(type, position, buffer, bufferLength, bytesRead);
+        break;
     }
+
+    return res;
   }
 
   virtual Result write(FsFieldType type, FsLength position, const void *buffer, size_t bufferLength,
       size_t *bytesWritten) override
   {
+    Result res = E_OK;
+
     switch (type)
     {
       case FS_NODE_DATA:
       {
+        if (!(m_access & FS_ACCESS_WRITE))
+        {
+          res = E_ACCESS;
+          break;
+        }
+
+        if (size64)
+          res = setInterfacePosition<uint64_t>(position);
+        else if (size32)
+          res = setInterfacePosition<uint32_t>(position);
+
+        if (res != E_OK)
+          break;
+
         const auto count = ifWrite(m_interface, buffer, bufferLength);
 
         if (bytesWritten != nullptr)
           *bytesWritten = count;
 
-        return (bufferLength == 0 || count > 0) ? E_OK : E_INTERFACE;
+        res = (bufferLength == 0 || count > 0) ? E_OK : E_FULL;
+        break;
       }
 
       default:
-        return VfsNode::write(type, position, buffer, bufferLength, bytesWritten);
+        res = VfsNode::write(type, position, buffer, bufferLength, bytesWritten);
+        break;
     }
+
+    return res;
   }
 
 private:
-  Interface *m_interface;
   std::tuple<InterfaceParamNode<ARGs>...> m_parameters;
+  Interface *m_interface;
+  bool size32;
+  bool size64;
+
+  template<typename T>
+  Result setInterfacePosition(FsLength position)
+  {
+    static constexpr IfParameter POSITION_PARAM = std::is_same_v<T, uint32_t> ? IF_POSITION : IF_POSITION_64;
+
+    const T pos = static_cast<T>(position);
+    return ifSetParam(m_interface, POSITION_PARAM, &pos);
+  }
 };
 
 #endif // VFS_SHELL_CORE_SHELL_INTERFACES_INTERFACENODE_HPP_

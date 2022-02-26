@@ -12,7 +12,7 @@
 #include <cassert>
 #include <new>
 
-extern const struct InterfaceClass * const InterfaceWrapper;
+extern const InterfaceClass * const InterfaceWrapper;
 
 class InterfaceWrapper
 {
@@ -79,6 +79,8 @@ private:
     m_rx{pinInit(rx)},
     m_tx{pinInit(tx)}
   {
+    // m_base should be left untouched
+
     assert(pinValid(m_rx));
     assert(pinValid(m_tx));
 

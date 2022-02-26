@@ -9,6 +9,7 @@
 
 #include <xcore/fs/fs.h>
 #include <xcore/realtime.h>
+#include <functional>
 #include <memory>
 #include <new>
 
@@ -24,10 +25,11 @@ class VfsNode
 public:
   enum VfsFieldType
   {
-    VFS_NODE_OBJECT = FS_TYPE_END
+    VFS_NODE_OBJECT = FS_TYPE_END,
+    VFS_NODE_INTERFACE
   };
 
-  VfsNode(const char *, time64_t, FsAccess);
+  VfsNode(time64_t, FsAccess);
   VfsNode(VfsNode &&) = default;
   virtual ~VfsNode() = default;
 
@@ -43,11 +45,14 @@ public:
   virtual void enter(VfsHandle *, VfsNode *);
   virtual void leave();
 
+  bool rename(const char *);
+  void operator delete(void *);
+
 protected:
   VfsHandle *m_handle;
   VfsNode *m_parent;
 
-  std::unique_ptr<char []> m_name;
+  std::unique_ptr<char [], std::function<void (char [])>> m_name;
   time64_t m_timestamp;
   FsAccess m_access;
 };

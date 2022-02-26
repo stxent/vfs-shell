@@ -13,7 +13,7 @@
 class VfsDataNode: public VfsNode
 {
 public:
-  VfsDataNode(const char *, time64_t = 0, FsAccess = FS_ACCESS_READ | FS_ACCESS_WRITE);
+  VfsDataNode(time64_t = 0, FsAccess = FS_ACCESS_READ | FS_ACCESS_WRITE);
 
   virtual Result length(FsFieldType, FsLength *) override;
   virtual Result read(FsFieldType, FsLength, void *, size_t, size_t *) override;
@@ -28,7 +28,7 @@ private:
 
   size_t m_dataCapacity;
   size_t m_dataLength;
-  std::unique_ptr<uint8_t []> m_dataBuffer;
+  std::unique_ptr<uint8_t [], std::function<void (uint8_t [])>> m_dataBuffer;
 
   bool reallocateDataBuffer(size_t);
   Result writeDataBuffer(FsLength, const void *, size_t, size_t *);

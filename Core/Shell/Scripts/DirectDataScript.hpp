@@ -155,7 +155,7 @@ private:
       tty() << "write error at " << *position << Terminal::EOL;
 
       if (res == E_OK)
-        res = E_ERROR;
+        res = E_FULL;
     }
     else
       *position += bytesWritten;

@@ -67,10 +67,14 @@ private:
 void TimeTest::setUp()
 {
   m_loop = uv_default_loop();
+  CPPUNIT_ASSERT(m_loop != nullptr);
 
   m_listener = TestApplication::makeSignalListener(SIGUSR1, onSignalReceived, m_loop);
+  CPPUNIT_ASSERT(m_listener != nullptr);
   m_appInterface = TestApplication::makeUdpInterface("127.0.0.1", 8000, 8001);
+  CPPUNIT_ASSERT(m_appInterface != nullptr);
   m_testInterface = TestApplication::makeUdpInterface("127.0.0.1", 8001, 8000);
+  CPPUNIT_ASSERT(m_testInterface != nullptr);
 
   m_application = new TestTimeApplication(m_appInterface, m_testInterface);
 

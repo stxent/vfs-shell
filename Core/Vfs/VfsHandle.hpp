@@ -87,7 +87,7 @@ protected:
   VfsDirectory m_root;
 
   VfsHandle() :
-    m_root{"root"}
+    m_root{}
   {
     m_root.enter(this, nullptr);
   }
