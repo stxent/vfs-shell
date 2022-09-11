@@ -48,10 +48,10 @@
 #include <halm/platform/lpc/serial.h>
 #include <halm/platform/lpc/spi_dma.h>
 #include <halm/pm.h>
-#include <dpm/drivers/displays/display.h>
-#include <dpm/drivers/displays/ili9325.h>
-#include <dpm/drivers/displays/s6d1121.h>
-#include <dpm/drivers/platform/lpc/memory_bus_dma.h>
+#include <dpm/displays/display.h>
+#include <dpm/displays/ili9325.h>
+#include <dpm/displays/s6d1121.h>
+#include <dpm/platform/lpc/memory_bus_dma.h>
 #include <xcore/fs/utils.h>
 
 #include <cassert>
@@ -263,9 +263,9 @@ void Application::bootstrap()
   // Device nodes
 
   node = new InterfaceNode<
-          ParamDesc<IfDisplayParameter, IF_DISPLAY_ORIENTATION, DisplayOrientation>,
-          ParamDesc<IfDisplayParameter, IF_DISPLAY_RESOLUTION, DisplayResolution, uint16_t, uint16_t>,
-          ParamDesc<IfDisplayParameter, IF_DISPLAY_WINDOW, DisplayWindow, uint16_t, uint16_t, uint16_t, uint16_t>
+          ParamDesc<DisplayParameter, IF_DISPLAY_ORIENTATION, DisplayOrientation>,
+          ParamDesc<DisplayParameter, IF_DISPLAY_RESOLUTION, DisplayResolution, uint16_t, uint16_t>,
+          ParamDesc<DisplayParameter, IF_DISPLAY_WINDOW, DisplayWindow, uint16_t, uint16_t, uint16_t, uint16_t>
       >{m_display.get(), RealTimeClock::instance().getTime()};
   ShellHelpers::injectNode(m_filesystem.get(), node, "/dev/display");
 

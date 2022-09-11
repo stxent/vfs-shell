@@ -1,17 +1,13 @@
 # Copyright (C) 2017 xent
 # Project is distributed under the terms of the GNU General Public License v3.0
 
-include_directories(
-        "${PROJECT_SOURCE_DIR}/Platform/${BOARD}"
-)
+include("${PROJECT_SOURCE_DIR}/Platform/${BOARD}/CMakeLists.txt" OPTIONAL)
 
 file(GLOB_RECURSE BOARD_SOURCES
         "${PROJECT_SOURCE_DIR}/Platform/${BOARD}/*.c"
         "${PROJECT_SOURCE_DIR}/Platform/${BOARD}/*.cpp"
 )
 
-include("${PROJECT_SOURCE_DIR}/Platform/${BOARD}/CMakeLists.txt" OPTIONAL)
-
 add_library(project_platform OBJECT ${BOARD_SOURCES})
-target_include_directories(project_platform PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
+target_include_directories(project_platform PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/${BOARD}")
 target_link_libraries(project_platform PRIVATE project_core halm dpm)

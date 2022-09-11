@@ -27,7 +27,7 @@ public:
   };
 
 private:
-  class OptionalArgumentFinder: std::unary_function<const Descriptor &, bool>
+  class OptionalArgumentFinder
   {
   public:
     OptionalArgumentFinder(const char *name) :
@@ -44,7 +44,7 @@ private:
     const char *m_name;
   };
 
-  struct PositionalArgumentFinder: std::unary_function<const Descriptor &, bool>
+  struct PositionalArgumentFinder
   {
     bool operator()(const Descriptor &object) const
     {

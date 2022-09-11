@@ -35,7 +35,7 @@ MockDisplay::~MockDisplay()
 
 Result MockDisplay::getParamImpl(int parameter, void *data)
 {
-  switch (static_cast<IfDisplayParameter>(parameter))
+  switch (static_cast<DisplayParameter>(parameter))
   {
     case IF_DISPLAY_ORIENTATION:
       memcpy(data, &m_orientation, sizeof(m_orientation));
@@ -66,7 +66,7 @@ Result MockDisplay::getParamImpl(int parameter, void *data)
 
 Result MockDisplay::setParamImpl(int parameter, const void *data)
 {
-  switch (static_cast<IfDisplayParameter>(parameter))
+  switch (static_cast<DisplayParameter>(parameter))
   {
     case IF_DISPLAY_ORIENTATION:
       memcpy(&m_orientation, data, sizeof(m_orientation));

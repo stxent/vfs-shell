@@ -7,7 +7,7 @@
 #ifndef VFS_SHELL_TESTS_INTERFACENODE_MOCKDISPLAY_HPP_
 #define VFS_SHELL_TESTS_INTERFACENODE_MOCKDISPLAY_HPP_
 
-#include <dpm/drivers/displays/display.h>
+#include <dpm/displays/display.h>
 #include <new>
 
 extern const InterfaceClass * const MockDisplay;

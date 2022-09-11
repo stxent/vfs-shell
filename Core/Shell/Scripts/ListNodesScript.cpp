@@ -169,14 +169,8 @@ void ListNodesScript::printDirectoryContent(const char *positionalArgument)
       break;
     }
 
-    FsLength nodeIdLength = 0;
-    uint64_t nodeId = 0;
-
-    if (fsNodeLength(child, FS_NODE_DATA, &nodeIdLength) == E_OK)
-    {
-      if (nodeIdLength <= sizeof(nodeId))
-        fsNodeRead(child, FS_NODE_ID, 0, &nodeId, nodeIdLength, nullptr);
-    }
+    FsIdentifier nodeId = 0;
+    fsNodeRead(child, FS_NODE_ID, 0, &nodeId, sizeof(nodeId), nullptr);
 
     FsLength nodeDataLength = 0;
     fsNodeLength(child, FS_NODE_DATA, &nodeDataLength);

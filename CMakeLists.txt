@@ -10,22 +10,23 @@ option(BUILD_TESTING "Enable testing support." OFF)
 option(USE_LTO "Enable Link Time Optimization." OFF)
 
 # Configure build flags
-set(FLAGS_DEFAULT "-fdata-sections -ffunction-sections -Wall -Wextra -Wshadow -pedantic -fno-exceptions")
+set(FLAGS_DEFAULT "-fdata-sections -ffunction-sections -Wall -Wextra -Wshadow -fno-exceptions")
 
 if(NOT DEFINED BOARD)
     set(BOARD "Linux")
 endif()
 
-if(NOT ${BUILD_TESTING})
+if(NOT BUILD_TESTING)
     set(FLAGS_DEFAULT "${FLAGS_DEFAULT} -fno-rtti")
 endif()
 
 set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${FLAGS_DEFAULT} ${FLAGS_CPU}")
 set(CMAKE_SHARED_LIBRARY_LINK_CXX_FLAGS "")
 
-if(${USE_LTO})
+if(USE_LTO)
     set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
     if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
         set(CMAKE_CXX_COMPILE_OPTIONS_IPO -flto -ffat-lto-objects)
@@ -58,7 +59,7 @@ add_subdirectory(Platform)
 add_executable(${PROJECT_NAME} $<TARGET_OBJECTS:project_core> $<TARGET_OBJECTS:project_platform>)
 target_link_libraries(${PROJECT_NAME} PRIVATE project_core project_platform)
 
-if(${BUILD_TESTING})
+if(BUILD_TESTING)
     target_compile_options(project_core PRIVATE --coverage)
     target_compile_options(project_platform PRIVATE --coverage)
     target_link_libraries(${PROJECT_NAME} PRIVATE gcov)

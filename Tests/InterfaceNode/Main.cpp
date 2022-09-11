@@ -200,10 +200,10 @@ void InterfaceNodeTest::testDisplayNode()
   CPPUNIT_ASSERT(interface != nullptr);
 
   VfsNode * const node = new InterfaceNode<
-          ParamDesc<IfDisplayParameter, IF_DISPLAY_ORIENTATION, DisplayOrientation>,
-          ParamDesc<IfDisplayParameter, IF_DISPLAY_RESOLUTION, DisplayResolution, uint16_t, uint16_t>,
-          ParamDesc<IfDisplayParameter, IF_DISPLAY_WINDOW, DisplayWindow, uint16_t, uint16_t, uint16_t, uint16_t>,
-          ParamDesc<IfDisplayParameter, IF_DISPLAY_UPDATE, int>
+          ParamDesc<DisplayParameter, IF_DISPLAY_ORIENTATION, DisplayOrientation>,
+          ParamDesc<DisplayParameter, IF_DISPLAY_RESOLUTION, DisplayResolution, uint16_t, uint16_t>,
+          ParamDesc<DisplayParameter, IF_DISPLAY_WINDOW, DisplayWindow, uint16_t, uint16_t, uint16_t, uint16_t>,
+          ParamDesc<DisplayParameter, IF_DISPLAY_UPDATE, int>
       >{interface, MockTimeProvider::instance().getTime()};
   CPPUNIT_ASSERT(node != nullptr);
 

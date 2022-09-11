@@ -7,9 +7,9 @@
 #ifndef VFS_SHELL_CORE_SHELL_INTERFACES_DISPLAYPARAMETERS_HPP_
 #define VFS_SHELL_CORE_SHELL_INTERFACES_DISPLAYPARAMETERS_HPP_
 
-#include <dpm/drivers/displays/display.h>
+#include <dpm/displays/display.h>
 
-template<IfDisplayParameter ID>
+template<DisplayParameter ID>
 static constexpr const char *ifParamToName()
 {
   switch (ID)
