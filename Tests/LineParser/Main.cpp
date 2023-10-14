@@ -115,7 +115,7 @@ void LineParserTest::testBackspaceKey()
   m_application->sendShellText("\b\b");
   m_application->sendShellText("\x7F\x7F");
 
-  // Insert "foo"
+  // Insert "test"
   m_application->sendShellText("test");
 
   // Run command
@@ -139,7 +139,7 @@ void LineParserTest::testBackspaceKeyDiscard()
   // Erase discard
   m_application->sendShellText("\b");
 
-  // Insert "foo"
+  // Insert "echo"
   m_application->sendShellText("echo");
 
   // Run command

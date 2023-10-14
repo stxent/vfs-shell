@@ -1,10 +1,10 @@
 # Copyright (C) 2017 xent
 # Project is distributed under the terms of the GNU General Public License v3.0
 
-project(Shell CXX)
-cmake_minimum_required(VERSION 3.13)
+cmake_minimum_required(VERSION 3.21)
 cmake_policy(SET CMP0054 NEW)
 cmake_policy(SET CMP0069 NEW)
+project(Shell CXX)
 
 option(BUILD_TESTING "Enable testing support." OFF)
 option(USE_LTO "Enable Link Time Optimization." OFF)

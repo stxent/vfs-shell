@@ -145,8 +145,9 @@ void MountTest::testErrorIncorrectArguments()
 void MountTest::testErrorNoDestination()
 {
   static const Fat32FsConfig makeFsConfig = {
-      1024,  // clusterSize
-      2,     // tableCount
+      1024,  // cluster
+      0,     // reserved
+      2,     // tables
       "TEST" // label
   };
 
@@ -154,7 +155,7 @@ void MountTest::testErrorNoDestination()
   Result res;
   bool ok;
 
-  res = fat32MakeFs(m_mem, &makeFsConfig);
+  res = fat32MakeFs(m_mem, &makeFsConfig, nullptr, 0);
   CPPUNIT_ASSERT(res == E_OK);
 
   VfsNode * const virtualMemNode = new InterfaceNode<>{m_mem};
@@ -227,8 +228,9 @@ void MountTest::testHelpMessage()
 void MountTest::testMount()
 {
   static const Fat32FsConfig makeFsConfig = {
-      1024,  // clusterSize
-      2,     // tableCount
+      1024,  // cluster
+      0,     // reserved
+      2,     // tables
       "TEST" // label
   };
 
@@ -236,7 +238,7 @@ void MountTest::testMount()
   Result res;
   bool ok;
 
-  res = fat32MakeFs(m_mem, &makeFsConfig);
+  res = fat32MakeFs(m_mem, &makeFsConfig, nullptr, 0);
   CPPUNIT_ASSERT(res == E_OK);
 
   VfsNode * const virtualMemNode = new InterfaceNode<>{m_mem};
@@ -255,8 +257,9 @@ void MountTest::testMount()
 void MountTest::testNodes()
 {
   static const Fat32FsConfig makeFsConfig = {
-      1024,  // clusterSize
-      2,     // tableCount
+      1024,  // cluster
+      0,     // reserved
+      2,     // tables
       "TEST" // label
   };
 
@@ -264,7 +267,7 @@ void MountTest::testNodes()
   Result res;
   bool ok;
 
-  res = fat32MakeFs(m_mem, &makeFsConfig);
+  res = fat32MakeFs(m_mem, &makeFsConfig, nullptr, 0);
   CPPUNIT_ASSERT(res == E_OK);
 
   VfsNode * const virtualMemNode = new InterfaceNode<>{m_mem};
