@@ -59,9 +59,9 @@ public:
         static const GenericClockConfig activeMainClockConfig = {CLOCK_PLL};
         static const GenericClockConfig temporaryMainClockConfig = {CLOCK_INTERNAL};
         const PllConfig updatedPllConfig = {
-            CLOCK_EXTERNAL,                           // source
             static_cast<uint16_t>(values.div), // divisor
-            static_cast<uint16_t>(values.mul)  // multiplier
+            static_cast<uint16_t>(values.mul), // multiplier
+            CLOCK_EXTERNAL                     // source
         };
 
         clockEnable(MainClock, &temporaryMainClockConfig);

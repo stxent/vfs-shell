@@ -59,7 +59,7 @@
 static void enableClock()
 {
   static const ExternalOscConfig extOscConfig = {12000000, false};
-  static const PllConfig sysPllConfig = {CLOCK_EXTERNAL, 3, 25};
+  static const PllConfig sysPllConfig = {3, 25, CLOCK_EXTERNAL};
   static const GenericClockConfig mainClockConfig = {CLOCK_PLL};
 
   clockEnable(ExternalOsc, &extOscConfig);
@@ -243,6 +243,7 @@ const SpiDmaConfig Application::s_spiConfig = {
     PIN(0, 17), // miso
     PIN(0, 18), // mosi
     PIN(1, 20), // sck
+    0,          // priority
     0,          // channel
     3,          // mode
     {2, 3}      // dma
