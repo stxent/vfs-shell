@@ -231,9 +231,9 @@ const SerialConfig Application::s_serialConfig = {
     128,                // rxLength
     4096,               // txLength
     115200,             // rate
-    SERIAL_PARITY_NONE, // parity
     PIN(0, 16),         // rx
     PIN(0, 15),         // tx
+    SERIAL_PARITY_NONE, // parity
     0,                  // priority
     1                   // channel
 };

@@ -7,9 +7,11 @@
 #ifndef VFS_SHELL_WRAPPERS_THREAD_HPP_
 #define VFS_SHELL_WRAPPERS_THREAD_HPP_
 
-namespace Osw
+namespace Os
 {
-#include <osw/thread.h>
+
+#include <xcore/os/thread.h>
+
 }
 
 #endif // VFS_SHELL_WRAPPERS_THREAD_HPP_

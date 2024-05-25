@@ -4,9 +4,6 @@
 [submodule "Libs/halm"]
 	path = Libs/halm
 	url = ../halm.git
-[submodule "Libs/osw"]
-	path = Libs/osw
-	url = ../osw.git
 [submodule "Libs/yaf"]
 	path = Libs/yaf
 	url = ../yaf.git

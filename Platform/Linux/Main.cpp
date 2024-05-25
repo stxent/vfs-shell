@@ -33,7 +33,7 @@
 #include "Vfs/VfsHandle.hpp"
 
 #include <halm/platform/generic/console.h>
-#include <osw/thread.h>
+#include <xcore/os/thread.h>
 
 #include <iostream>
 #include <uv.h>

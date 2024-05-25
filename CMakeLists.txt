@@ -38,9 +38,6 @@ endif()
 set(FS_NAME_LENGTH 256 CACHE INTERNAL "Filesystem name length" FORCE)
 add_subdirectory(Libs/xcore xcore)
 
-# Configure OSW library
-add_subdirectory(Libs/osw osw)
-
 # Configure HALM library, CONFIG_FILE should be defined
 set(HALM_CONFIG_FILE "${PROJECT_SOURCE_DIR}/Platform/${BOARD}/Halm.config" CACHE INTERNAL "Path to the library configuration file" FORCE)
 add_subdirectory(Libs/halm halm)

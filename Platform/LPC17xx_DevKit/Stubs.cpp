@@ -4,48 +4,69 @@
  * Project is distributed under the terms of the GNU General Public License v3.0
  */
 
+#include <xcore/accel.h>
+#include <stdio.h>
+
+struct _reent;
+struct _stat;
+
 void *__dso_handle = nullptr;
-
-namespace std {
-
-void __throw_bad_alloc()
-{
-  while (1);
-}
-
-void __throw_bad_function_call(void)
-{
-  while (1);
-}
-
-void __throw_length_error(char const *)
-{
-  while (1);
-}
-
-void __throw_logic_error(const char *)
-{
-  while (1);
-}
-
-void __throw_out_of_range(const char *)
-{
-  while (1);
-}
-
-}
 
 extern "C" void __assert_func(const char *, int, const char *, const char *)
 {
+  invokeDebugger();
   while (1);
 }
 
-extern "C" void __cxa_deleted_virtual()
+extern "C" void __malloc_lock(_reent *)
 {
-  while (1);
 }
 
-extern "C" void __cxa_pure_virtual()
+extern "C" void __malloc_unlock(_reent *)
 {
-  while (1);
+}
+
+extern "C" int _close(int)
+{
+  return -1;
+}
+
+extern "C" int _fstat(int, _stat *)
+{
+  return -1;
+}
+
+extern "C" int _getpid()
+{
+	return 1;
+}
+
+extern "C" int _isatty(int)
+{
+	return 1;
+}
+
+extern "C" int _kill(int, int)
+{
+	return -1;
+}
+
+extern "C" off_t _lseek(int, off_t, int)
+{
+  return 0;
+}
+
+extern "C" int _open(const char *, int)
+{
+  return -1;
+}
+
+extern "C" int _read(int, char *, int)
+{
+  return -1;
+}
+
+extern "C" int _write(int, char *, int)
+{
+  return -1;
 }

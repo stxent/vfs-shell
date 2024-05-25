@@ -6,6 +6,9 @@
 ENTRY(RESET_ISR)
 EXTERN(vectorTable)
 
+/* Suppress newlib warnings */
+EXTERN(__assert_func)
+
 MEMORY
 {
   FLASH (rx) : ORIGIN = 0x00000000, LENGTH = 512K

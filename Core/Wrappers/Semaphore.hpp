@@ -7,7 +7,7 @@
 #ifndef VFS_SHELL_WRAPPERS_SEMAPHORE_HPP_
 #define VFS_SHELL_WRAPPERS_SEMAPHORE_HPP_
 
-#include <osw/semaphore.h>
+#include <xcore/os/semaphore.h>
 #include <cstdlib>
 
 namespace Os

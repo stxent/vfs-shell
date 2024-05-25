@@ -22,11 +22,13 @@ SerialTerminal::~SerialTerminal()
 
 void SerialTerminal::subscribe(Script *script)
 {
+  Os::MutexLocker locker{m_lock};
   m_subscribers.push_back(script);
 }
 
 void SerialTerminal::unsubscribe(const Script *script)
 {
+  Os::MutexLocker locker{m_lock};
   auto iter = std::find(m_subscribers.begin(), m_subscribers.end(), script);
 
   if (iter != m_subscribers.end())
@@ -35,13 +37,11 @@ void SerialTerminal::unsubscribe(const Script *script)
 
 size_t SerialTerminal::read(char *buffer, size_t length)
 {
-  // TODO Locks
   return ifRead(m_interface, buffer, length);
 }
 
 size_t SerialTerminal::write(const char *buffer, size_t length)
 {
-  // TODO Locks
   const char *position = buffer;
   size_t left = length;
 
@@ -61,6 +61,7 @@ void SerialTerminal::dataCallback()
 
   if (ifGetParam(m_interface, IF_RX_AVAILABLE, &available) == E_OK && available)
   {
+    Os::MutexLocker locker{m_lock};
     SerialInputEvent event;
 
     event.event = ScriptEvent::Event::SERIAL_INPUT;

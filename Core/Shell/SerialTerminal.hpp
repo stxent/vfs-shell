@@ -8,6 +8,7 @@
 #define VFS_SHELL_CORE_SHELL_SERIALTERMINAL_HPP_
 
 #include "Shell/Terminal.hpp"
+#include "Wrappers/Mutex.hpp"
 #include <xcore/interface.h>
 #include <list>
 
@@ -27,6 +28,7 @@ public:
 private:
   static constexpr size_t BUFFER_SIZE{64};
 
+  Os::Mutex m_lock;
   Interface *m_interface;
   std::list<Script *> m_subscribers;
 
