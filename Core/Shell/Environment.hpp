@@ -7,6 +7,7 @@
 #ifndef VFS_SHELL_CORE_SHELL_ENVIRONMENT_HPP_
 #define VFS_SHELL_CORE_SHELL_ENVIRONMENT_HPP_
 
+#include <algorithm>
 #include <cstring>
 #include <functional>
 #include <memory>

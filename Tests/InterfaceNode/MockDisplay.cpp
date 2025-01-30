@@ -5,6 +5,7 @@
  */
 
 #include "MockDisplay.hpp"
+#include <algorithm>
 #include <cppunit/extensions/HelperMacros.h>
 #include <cstring>
 
