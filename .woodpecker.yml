@@ -1,0 +1,61 @@
+when:
+  - event: [push, manual]
+
+clone:
+  git:
+    image: ${DOCKER_PREFIX}/network-utils
+    pull: true
+    commands:
+      - git clone ${CI_REPO_CLONE_URL} project
+      - cd project
+      - git checkout ${CI_COMMIT_SHA}
+      - git submodule update --init --recursive
+      - export REPO_REVISION=`git rev-list HEAD --count`
+      - echo "ARTIFACT_PREFIX=${CI_REPO_NAME}_r$${REPO_REVISION}-${CI_COMMIT_SHA:0:8}_b${CI_PIPELINE_NUMBER}" >> envvars
+
+steps:
+  build_lpc17xx:
+    image: ${DOCKER_PREFIX}/gcc-arm-embedded
+    pull: true
+    commands:
+      - cd project
+      - mkdir -p deploy
+      - cmake . -B build_lpc17xx -DCMAKE_BUILD_TYPE=Release -DBOARD=LPC17xx_DevKit -DCMAKE_TOOLCHAIN_FILE=Libs/xcore/toolchains/cortex-m3.cmake -DPLATFORM=LPC17XX
+      - make -C build_lpc17xx -j `nproc`
+      - cp build_lpc17xx/Shell.bin deploy/vfs-shell_lpc17xx.bin
+      - cp build_lpc17xx/Shell.hex deploy/vfs-shell_lpc17xx.hex
+
+  build_x86:
+    image: ${DOCKER_PREFIX}/gcc-desktop
+    pull: true
+    commands:
+      - cd project
+      - mkdir -p deploy
+      - cmake . -B build_x86 -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=ON
+      - make -C build_x86 -j `nproc`
+      - cp build_x86/Shell deploy/vfs-shell
+
+  test:
+    image: ${DOCKER_PREFIX}/gcc-testing
+    pull: true
+    commands:
+      - cd project
+      - make -C build_x86 test
+
+  deploy:
+    image: ${DOCKER_PREFIX}/network-utils
+    pull: true
+    commands:
+      - cd project
+      - source ./envvars
+      - cd deploy
+      - smbclient "//$${DEPLOY_SERVER_ENV}" -U "$${DEPLOY_USER_NAME_ENV}%$${DEPLOY_USER_PASSWORD_ENV}" -c "mkdir ${CI_REPO_NAME}" || true
+      - smbclient "//$${DEPLOY_SERVER_ENV}" -U "$${DEPLOY_USER_NAME_ENV}%$${DEPLOY_USER_PASSWORD_ENV}" -c "cd ${CI_REPO_NAME}; mkdir ${CI_COMMIT_BRANCH}" || true
+      - smbclient "//$${DEPLOY_SERVER_ENV}" -U "$${DEPLOY_USER_NAME_ENV}%$${DEPLOY_USER_PASSWORD_ENV}" -c "cd ${CI_REPO_NAME}/${CI_COMMIT_BRANCH}; prompt; mput *"
+    environment:
+      DEPLOY_SERVER_ENV:
+        from_secret: DEPLOY_SERVER
+      DEPLOY_USER_NAME_ENV:
+        from_secret: DEPLOY_USER_NAME
+      DEPLOY_USER_PASSWORD_ENV:
+        from_secret: DEPLOY_USER_PASSWORD

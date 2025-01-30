@@ -66,3 +66,14 @@ if(BUILD_TESTING)
     enable_testing()
     add_subdirectory(Tests)
 endif()
+
+if(NOT "${BOARD}" STREQUAL "Linux")
+    add_custom_command(TARGET ${PROJECT_NAME}
+            POST_BUILD
+            COMMAND "${CMAKE_OBJCOPY}" "${PROJECT_NAME}${CMAKE_EXECUTABLE_SUFFIX}" -Obinary "${PROJECT_NAME}.bin"
+    )
+    add_custom_command(TARGET ${PROJECT_NAME}
+            POST_BUILD
+            COMMAND "${CMAKE_OBJCOPY}" "${PROJECT_NAME}${CMAKE_EXECUTABLE_SUFFIX}" -Oihex "${PROJECT_NAME}.hex"
+    )
+endif()
