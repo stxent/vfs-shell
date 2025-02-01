@@ -67,7 +67,6 @@ void SerialTerminal::dataCallback()
     event.event = ScriptEvent::Event::SERIAL_INPUT;
     event.length = available;
 
-    // TODO Locks
     for (auto script : m_subscribers)
       script->onEventReceived(&event);
   }

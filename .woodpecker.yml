@@ -42,8 +42,6 @@ steps:
       - cd project
       - cd build_x86
       - ctest .. --rerun-failed --output-on-failure
-      - cd -
-      - make -C build_x86 test
 
   deploy:
     image: ${DOCKER_PREFIX}/network-utils

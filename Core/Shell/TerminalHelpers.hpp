@@ -142,19 +142,6 @@ private:
     }
   };
 
-  static void invert(char *first, char *last)
-  {
-    while (first < last)
-    {
-      const char tmp = *first;
-      *first = *last;
-      *last = tmp;
-
-      first++;
-      last--;
-    }
-  }
-
   static void prepend(char *first, size_t length, size_t width, char fill)
   {
     if (length < width)
@@ -169,6 +156,19 @@ private:
     }
   }
 
+  static void reverse(char *first, char *last)
+  {
+    while (first < last)
+    {
+      const char tmp = *first;
+      *first = *last;
+      *last = tmp;
+
+      first++;
+      last--;
+    }
+  }
+
   template<typename T>
   static char *uint2dec(char *buffer, T value, size_t width, char fill)
   {
@@ -176,14 +176,16 @@ private:
 
     do
     {
-      const auto remainder = value % 10;
+      const auto quotient = value / 10;
+      const auto remainder = value - quotient * 10;
+
       *output++ = remainder + '0';
-      value /= 10;
+      value = quotient;
     }
     while (value);
 
     *output = '\0';
-    invert(buffer, output - 1);
+    reverse(buffer, output - 1);
     prepend(buffer, output - buffer, width, fill);
 
     return output;
@@ -193,13 +195,20 @@ private:
   static typename std::enable_if_t<std::is_signed_v<T>, char *> int2dec(char *buffer, T value, size_t width,
       char fill)
   {
-    char * const output = value < 0 ? buffer + 1 : buffer;
-    char * const end = uint2dec<typename std::make_unsigned<T>::type>(output, std::abs(value), width, fill);
+    using UnsignedType = std::make_unsigned_t<T>;
 
     if (value < 0)
-      *buffer = '-';
+    {
+      *buffer++ = '-';
 
-    return end;
+      if (value != std::numeric_limits<T>::min())
+        value = -value;
+
+      if (width)
+        --width;
+    }
+
+    return uint2dec<UnsignedType>(buffer, static_cast<UnsignedType>(value), width, fill);
   }
 
   template<typename T>
@@ -223,7 +232,7 @@ private:
     while (value);
 
     *output = '\0';
-    invert(buffer, output - 1);
+    reverse(buffer, output - 1);
     prepend(buffer, output - buffer, width, fill);
 
     return output;

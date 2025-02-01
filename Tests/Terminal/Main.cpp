@@ -188,6 +188,12 @@ void TerminalTest::testSerializationImpl()
   target = std::to_string(value);
   CPPUNIT_ASSERT(output == target);
 
+  value = std::numeric_limits<T>::min() / 2;
+  terminal << value;
+  output = terminal.hostRead();
+  target = std::to_string(value);
+  CPPUNIT_ASSERT(output == target);
+
   value = std::numeric_limits<T>::min();
   terminal << value;
   output = terminal.hostRead();
