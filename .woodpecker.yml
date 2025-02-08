@@ -19,29 +19,30 @@ steps:
     pull: true
     commands:
       - cd project
-      - mkdir -p deploy
+      - mkdir -p output
       - cmake . -B build_lpc17xx -DCMAKE_BUILD_TYPE=Release -DBOARD=LPC17xx_DevKit -DCMAKE_TOOLCHAIN_FILE=Libs/xcore/toolchains/cortex-m3.cmake -DPLATFORM=LPC17XX
       - make -C build_lpc17xx -j `nproc`
-      - cp build_lpc17xx/Shell.bin deploy/vfs-shell_lpc17xx.bin
-      - cp build_lpc17xx/Shell.hex deploy/vfs-shell_lpc17xx.hex
+      - cp build_lpc17xx/Shell.bin output/${CI_REPO_NAME}_lpc17xx.bin
+      - cp build_lpc17xx/Shell.hex output/${CI_REPO_NAME}_lpc17xx.hex
 
   build_x86:
     image: ${DOCKER_PREFIX}/gcc-desktop
     pull: true
     commands:
       - cd project
-      - mkdir -p deploy
+      - mkdir -p output
       - cmake . -B build_x86 -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=ON
       - make -C build_x86 -j `nproc`
-      - cp build_x86/Shell deploy/vfs-shell
+      - cp build_x86/Shell output/${CI_REPO_NAME}
 
   test:
     image: ${DOCKER_PREFIX}/gcc-testing
     pull: true
     commands:
       - cd project
-      - cd build_x86
-      - ctest .. --rerun-failed --output-on-failure
+      - ctest --test-dir build_x86 --rerun-failed --output-on-failure
+      - lcov -c -d . -o lcov.info --keep-going --no-external --ignore-errors inconsistent,inconsistent
+      - genhtml --output-directory coverage --num-spaces 2 --sort --function-coverage --branch-coverage --legend lcov.info
 
   deploy:
     image: ${DOCKER_PREFIX}/network-utils
@@ -49,6 +50,9 @@ steps:
     commands:
       - cd project
       - source ./envvars
+      - mkdir deploy
+      - tar -cvJ -f deploy/$${ARTIFACT_PREFIX}.tar.xz -C output .
+      - tar -cvJ -f deploy/$${ARTIFACT_PREFIX}_cov.tar.xz coverage
       - cd deploy
       - smbclient "//$${DEPLOY_SERVER_ENV}" -U "$${DEPLOY_USER_NAME_ENV}%$${DEPLOY_USER_PASSWORD_ENV}" -c "mkdir ${CI_REPO_NAME}" || true
       - smbclient "//$${DEPLOY_SERVER_ENV}" -U "$${DEPLOY_USER_NAME_ENV}%$${DEPLOY_USER_PASSWORD_ENV}" -c "cd ${CI_REPO_NAME}; mkdir ${CI_COMMIT_BRANCH}" || true
